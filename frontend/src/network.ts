@@ -2,6 +2,7 @@ import io from "socket.io-client";
 import Peer, { DataConnection } from "peerjs";
 import { Block } from "./blockchain";
 import useStore from "./store";
+import { Metadata } from "./types";
 
 const socket = io("http://localhost:3000");
 let peer: Peer;
@@ -75,7 +76,7 @@ export function init() {
   });
 }
 
-export function send(data: string) {
+export function send(data: Metadata) {
   console.log("Sending data to connections:", connections);
 
   useStore

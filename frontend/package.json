@@ -31,6 +31,8 @@
     "libp2p-tcp": "^0.17.2",
     "libp2p-websockets": "^0.16.2",
     "peerjs": "^1.5.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "socket.io": "^4.8.1",

@@ -1,14 +1,16 @@
+import { Metadata } from "./types";
+
 export class Block {
   public index: number;
   public timestamp: number;
-  public data: any;
+  public data: Metadata | string;
   public previousHash: string;
   public hash: string;
 
   constructor(
     index: number,
     timestamp: number,
-    data: any,
+    data: Metadata | string,
     previousHash: string = ""
   ) {
     this.index = index;

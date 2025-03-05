@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { Block, Blockchain } from "./blockchain";
+import { Metadata } from "./types";
 
 interface BlockchainState {
   blockchain: Blockchain;
-  addBlock: (data: any) => Promise<void>;
+  addBlock: (data: Metadata) => Promise<void>;
   updateChain: (chain: Block[]) => void;
 }
 

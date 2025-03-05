@@ -1,0 +1,3 @@
+{
+    "ignore": ["scraped_data/**"]
+  }
