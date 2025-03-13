@@ -28,7 +28,7 @@ export function init() {
               console.log(peerId, "connected to:", id);
               connections.push(connection);
 
-              connection.on("data", function (data: unknown) {
+              connection.on("data", async function (data: unknown) {
                 console.log("Received data:", data);
 
                 if (isBlockchainMessage(data)) {
@@ -37,7 +37,17 @@ export function init() {
                   if (type === "NEW_BLOCKCHAIN") {
                     useStore.getState().updateChain(payload);
                   }
-                } else {
+                } else if (data === 'type_request') {
+                  const arrayBuffer = await readFile('page.mhtml');
+                  connection.send(arrayBuffer)
+                  console.log('file sent')
+                } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+                  console.log('received file')
+                  // Convert Uint8Array to ArrayBuffer if necessary
+                  const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
+                  await handleFileData('page.mhtml', arrayBuffer)
+                  console.log('converted and downloaded file')
+                }else {
                   console.error("Received invalid data format:", data);
                 }
               });
@@ -51,7 +61,7 @@ export function init() {
           console.log("received connection", conn);
           connections.push(conn);
 
-          conn.on("data", function (data: unknown) {
+          conn.on("data", async function (data: unknown) {
             console.log("Received data:", data);
 
             if (isBlockchainMessage(data)) {
@@ -61,7 +71,17 @@ export function init() {
                 // Synchronize the blockchain
                 useStore.getState().updateChain(payload);
               }
-            } else {
+            } else if (data === 'type_request') {
+              const arrayBuffer = await readFile('page.mhtml');
+              conn.send(arrayBuffer)
+              console.log('file sent')
+            } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+              console.log('received file')
+              // Convert Uint8Array to ArrayBuffer if necessary
+              const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
+              await handleFileData('page.mhtml', arrayBuffer)
+              console.log('converted and downloaded file')
+            }else {
               console.error("Received invalid data format:", data);
             }
           });
@@ -74,6 +94,66 @@ export function init() {
     connectedPeers = data.filter((id: string) => id !== socket.id);
     console.log(connectedPeers);
   });
+}
+
+// Function to handle incoming file data
+export const handleFileData = async (filename: string, fileData: ArrayBuffer) => {
+  const folderHandle = useStore.getState().folderHandle;
+
+  if (!folderHandle) {
+    console.error("No folder access granted");
+    return;
+  }
+
+  try {
+    // Create a new file handle in the folder
+    const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
+
+    // Create a writable stream to the file
+    const writableStream = await fileHandle.createWritable();
+
+    // Write the ArrayBuffer to the file
+    await writableStream.write(fileData);
+
+    // Close the stream to save the file
+    await writableStream.close();
+
+    console.log(`File "${filename}" saved successfully`);
+  } catch (err) {
+    console.error("Error saving file:", err);
+  }
+};
+
+// Function to read a specific file
+const readFile = async (filename: string) => {
+  const folderHandle = useStore.getState().folderHandle;
+
+  if (!folderHandle) {
+    console.error("No folder access granted");
+    return;
+  }
+
+  try {
+    const fileHandle = await folderHandle.getFileHandle(filename);
+    const file = await fileHandle.getFile();
+    const fileData = await file.arrayBuffer();
+    console.log("File data:", fileData);
+    return fileData;
+  } catch (err) {
+    console.error("Error reading file:", err);
+  }
+};
+
+export function sendRequest() {
+  console.log(connections)
+  for (const conn of connections) {
+    if (conn.open) {
+      conn.send('type_request');
+      console.log('request sent')
+    } else {
+      console.log("connection not open");
+    }
+  }
 }
 
 export function send(data: Metadata) {
