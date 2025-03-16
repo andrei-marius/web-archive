@@ -33,14 +33,18 @@ export class Block {
 export class Blockchain {
   public chain: Block[];
 
-  constructor() {
-    this.chain = [this.createGenesisBlock()];
-  }
-
-  createGenesisBlock(): Block {
-    const genesisBlock = new Block(0, Date.now(), "Genesis Block", "0");
-    genesisBlock.calculateHash();
-    return genesisBlock;
+  constructor(chain?: Block[]) {
+    this.chain = chain || []
+      // ? chain.map(
+      //     (block) =>
+      //       new Block(
+      //         block.index,
+      //         block.timestamp,
+      //         block.data,
+      //         block.previousHash
+      //       )
+      //   )
+      // : [];
   }
 
   getLatestBlock(): Block {

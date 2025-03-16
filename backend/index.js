@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import cors from "cors";
 import scrapePage from "./puppeteer.js";
+import { Blockchain } from "./blockchain.js";
 
 const app = express();
 const server = createServer(app);
@@ -29,9 +30,14 @@ app.post('/scrape', async (req, res) => {
 });
 
 let connectedPeers = [];
+const blockchain = new Blockchain();
 
 io.on("connection", (socket) => {
   console.log(`${socket.id} connected`);
+
+  if (connectedPeers.length < 1) {
+    io.emit("init_blockchain", blockchain.chain);
+  }
 
   connectedPeers.push(socket.id);
 

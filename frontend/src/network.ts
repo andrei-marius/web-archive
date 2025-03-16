@@ -27,6 +27,7 @@ export function init() {
             connection.on("open", () => {
               console.log(peerId, "connected to:", id);
               connections.push(connection);
+              connection.send('request_blockchain')
 
               connection.on("data", async function (data: unknown) {
                 console.log("Received data:", data);
@@ -71,6 +72,8 @@ export function init() {
                 // Synchronize the blockchain
                 useStore.getState().updateChain(payload);
               }
+            } else if (data === 'request_blockchain') {
+              conn.send({ type: 'NEW_BLOCKCHAIN', payload: useStore.getState().blockchain.chain }) 
             } else if (data === 'type_request') {
               const arrayBuffer = await readFile('page.mhtml');
               conn.send(arrayBuffer)
@@ -94,6 +97,14 @@ export function init() {
     connectedPeers = data.filter((id: string) => id !== socket.id);
     console.log(connectedPeers);
   });
+
+  socket.on('init_blockchain', (data) => {
+    console.log("Received blockchain from server:", data);
+
+    // Update the blockchain in the Zustand store
+    useStore.getState().updateChain(data);
+  })
+
 }
 
 // Function to handle incoming file data
