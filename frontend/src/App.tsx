@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { init, send } from "./network";
+import { init, request, send } from "./network";
 import useStore from "./store";
 
 const App: React.FC = () => {
@@ -10,6 +10,14 @@ const App: React.FC = () => {
     init();
   }, []);
 
+    const req = async () => { 
+        request();
+        console.log("potato")
+        useStore
+            .getState()
+            .getAllBlocks()  
+        setUrl('');
+    }
   const sendData = async () => {
     console.log(url)
     if (url.trim()) {
@@ -42,7 +50,9 @@ const App: React.FC = () => {
         value={url}
         type="text"
         placeholder="URL"
-      />
+          />
+          <button onClick={req}>Request Chain</button>
+          
       <button onClick={sendData}>UPLOAD</button>
       <div>
         {blockchain.map((block, index) => (

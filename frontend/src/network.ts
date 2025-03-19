@@ -60,8 +60,27 @@ export function init() {
               if (type === "NEW_BLOCKCHAIN") {
                 // Synchronize the blockchain
                 useStore.getState().updateChain(payload);
+              
+              } else if (type === "BLOCKCHAIN") {
+                  // Synchronize the blockchain
+                  console.log("got it but not updating the page");
+                  useStore.getState().updateChain(payload);
+                  }
+            } else if (isRequest(data)) {
+                const { type } = data;
+                if (type === "request") {
+                    // Synchronize the blockchain
+                  console.log("got request")
+                  for (const conn of connections) {
+                      const blockchain = useStore.getState().blockchain.chain;
+                      if (conn.open) {
+                          conn.send({ type: "BLOCKCHAIN", payload: blockchain });
+                          console.log("sent blockchain");
+                      } else {
+                          console.log("connection not open");
+                      }
+                  }
               }
-            } else {
               console.error("Received invalid data format:", data);
             }
           });
@@ -96,6 +115,25 @@ export function send(data: Metadata) {
     });
 }
 
+//make response function to be the sender of the blockchain request, that might set the statechange closer to the app
+export function request() {
+    console.log("Sending request to connections:", connections);
+
+    useStore
+        .getState()
+        .getAllBlocks()  
+    for (const conn of connections) {
+        if (conn.open) {
+            conn.send({ type: "request" });
+            console.log("requested blockchain");
+        } else {
+            console.log("connection not open");
+        }
+    }
+    console.log("potatoes");
+        }
+
+
 interface BlockchainMessage {
   type: string;
   payload: Block[];
@@ -108,4 +146,15 @@ function isBlockchainMessage(data: unknown): data is BlockchainMessage {
     "type" in data &&
     "payload" in data
   );
+}
+
+interface request {
+    type: string;
+};
+function isRequest(data: unknown): data is request {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data
+    );
 }

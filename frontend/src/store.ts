@@ -6,6 +6,7 @@ interface BlockchainState {
   blockchain: Blockchain;
   addBlock: (data: Metadata) => Promise<void>;
   updateChain: (chain: Block[]) => void;
+  getAllBlocks: () => void;
 }
 
 const useStore = create<BlockchainState>((set) => ({
@@ -21,6 +22,10 @@ const useStore = create<BlockchainState>((set) => ({
     newBlockchain.chain = chain;
     set({ blockchain: newBlockchain });
   },
+  getAllBlocks: () => {
+    const { blockchain } = useStore.getState();
+      set({ blockchain });
+    }
 }));
 
 export default useStore;

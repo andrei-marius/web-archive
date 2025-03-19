@@ -46,6 +46,10 @@ export class Blockchain {
   getLatestBlock(): Block {
     return this.chain[this.chain.length - 1];
   }
+  
+  getAllBlocks(): Block[] {
+    return this.chain;
+  }
 
   async addBlock(newBlock: Block): Promise<void> {
     newBlock.previousHash = this.getLatestBlock().hash;
