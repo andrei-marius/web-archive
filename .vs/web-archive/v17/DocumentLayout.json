@@ -1,0 +1,159 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\kraut\\source\\repos\\web-archive\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\network.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\network.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\blockchain.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\blockchain.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\blockchain.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\blockchain.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\types.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\types.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\App.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\App.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\store.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\store.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:130:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "types.ts",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\types.ts",
+              "RelativeDocumentMoniker": "frontend\\src\\types.ts",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\types.ts",
+              "RelativeToolTip": "frontend\\src\\types.ts",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAgAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-03-21T15:01:55.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "index.js",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\index.js",
+              "RelativeDocumentMoniker": "backend\\index.js",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\index.js",
+              "RelativeToolTip": "backend\\index.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-03-21T14:19:24.742Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "blockchain.js",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\blockchain.js",
+              "RelativeDocumentMoniker": "backend\\blockchain.js",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\backend\\blockchain.js",
+              "RelativeToolTip": "backend\\blockchain.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-03-21T14:18:43.274Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "blockchain.ts",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\blockchain.ts",
+              "RelativeDocumentMoniker": "frontend\\src\\blockchain.ts",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\blockchain.ts",
+              "RelativeToolTip": "frontend\\src\\blockchain.ts",
+              "ViewState": "AgIAADIAAAAAAAAAAAAgwDQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-03-20T10:03:03.365Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "network.ts",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\network.ts",
+              "RelativeDocumentMoniker": "frontend\\src\\network.ts",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\network.ts",
+              "RelativeToolTip": "frontend\\src\\network.ts",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-03-19T12:18:37.319Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "store.ts",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\store.ts",
+              "RelativeDocumentMoniker": "frontend\\src\\store.ts",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\store.ts",
+              "RelativeToolTip": "frontend\\src\\store.ts",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAA8AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-03-14T10:15:28.023Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "App.tsx",
+              "DocumentMoniker": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\App.tsx",
+              "RelativeDocumentMoniker": "frontend\\src\\App.tsx",
+              "ToolTip": "C:\\Users\\kraut\\source\\repos\\web-archive\\frontend\\src\\App.tsx",
+              "RelativeToolTip": "frontend\\src\\App.tsx",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAADEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-03-14T09:57:05.573Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

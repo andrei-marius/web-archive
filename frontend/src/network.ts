@@ -1,6 +1,6 @@
 import io from "socket.io-client";
 import Peer, { DataConnection } from "peerjs";
-import { Block } from "./blockchain";
+import { Block, Blockchain } from "./blockchain";
 import useStore from "./store";
 import { Metadata } from "./types";
 
@@ -32,13 +32,39 @@ export function init() {
               connection.on("data", async function (data: unknown) {
                 console.log("Received data:", data);
 
-                if (isBlockchainMessage(data)) {
-                  const { type, payload } = data;
+                  if (isBlockchainMessage(data)) {
+                      const { type, payload } = data;
 
-                  if (type === "NEW_BLOCKCHAIN") {
-                    useStore.getState().updateChain(payload);
+                      if (type === "NEW_BLOCKCHAIN") {
+                          // Synchronize the blockchain
+                          useStore.getState().updateChain(payload);
+
+                      }
+                  } else if (isBlockchainSuggestion(data)) {
+                      const { type, suggestedBlock } = data;
+
+                      if (type === "SUGGEST_BLOCK") {
+                          // temp blockchain to check before updating the real one with a new block
+                          let tempChain: Blockchain = useStore.getState().blockchain;
+                          console.log("tempChain", tempChain);
+
+                          // temp block containing proposed metadata
+                          let tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
+
+                           tempChain!.addBlock(tempBlock);
+                          // console.log("added new block tempChain", tempChain);
+                          if (await tempChain.isChainValid() == true) {
+                              // add more checks
+                              console.log("chain has correct hash, shit worked");
+
+
+
+                          } else {
+                              console.error("Blockchain addition rejected due to hash missmatch")
+                          }
+                      }
                   }
-                } else if (data === 'type_request') {
+                  else if (data === 'type_request') {
                   const arrayBuffer = await readFile('page.mhtml');
                   connection.send(arrayBuffer)
                   console.log('file sent')
@@ -177,7 +203,8 @@ export function send(data: Metadata) {
       const blockchain = useStore.getState().blockchain.chain;
 
       for (const conn of connections) {
-        if (conn.open) {
+          if (conn.open) {
+            // send only the data and set type to a specific name for validation 
           conn.send({ type: "NEW_BLOCKCHAIN", payload: blockchain });
           console.log("sent blockchain");
         } else {
@@ -186,12 +213,36 @@ export function send(data: Metadata) {
       }
     });
 }
+export function suggestBlock(data: Metadata) {
+    console.log("Sending data to connections:", connections);
+    const metadata = data;
+            for (const conn of connections) {
+                if (conn.open) {
+                    // send only the data and set type to a specific name for validation 
+                    conn.send({ type: "SUGGEST_BLOCK", suggestedBlock: metadata });
+                    console.log("sent block for validation");
+                } else {
+                    console.log("connection not open");
+                }
+            }
+        }
+
 
 interface BlockchainMessage {
   type: string;
   payload: Block[];
 };
 
+interface SuggestedBlock {
+    type: string;
+    suggestedBlock: Metadata;
+};
+
+/* 
+function validation(data: Metadata) {
+    const blockchain = useStore.getState().blockchain;
+    blockchain.isChainValid();
+} */
 function isBlockchainMessage(data: unknown): data is BlockchainMessage {
   return (
     typeof data === "object" &&
@@ -199,4 +250,13 @@ function isBlockchainMessage(data: unknown): data is BlockchainMessage {
     "type" in data &&
     "payload" in data
   );
+}
+
+function isBlockchainSuggestion(data: unknown): data is SuggestedBlock {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "suggestedBlock" in data
+    );
 }
