@@ -53,14 +53,18 @@ export function init() {
 
                            tempChain!.addBlock(tempBlock);
                           // console.log("added new block tempChain", tempChain);
-                          if (await tempChain.isChainValid() == true) {
+                          if (await tempChain.isChainValid() == true) { 
                               // add more checks
-                              console.log("chain has correct hash, shit worked");
+                              console.log("chain has correct hash, shit worked")
 
-
+                              // send response to server 
+                              socket.send("VOTE_BLOCK_YES", tempBlock) //perhaps send along the id(connection array filter id)
 
                           } else {
+
                               console.error("Blockchain addition rejected due to hash missmatch")
+                              socket.send("VOTE_BLOCK_NO", tempBlock)
+                              // send response to server io.emit("VOTE_BLOCK_NO")
                           }
                       }
                   }
