@@ -10,131 +10,171 @@ let connectedPeers: string[] = [];
 let connections: DataConnection[] = [];
 
 export function init() {
-  socket.on("connect", () => {
-    console.log("socket id:", socket.id);
+    socket.on("connect", () => {
+        console.log("socket id:", socket.id);
 
-    if (socket.id) {
-      peer = new Peer(socket.id);
-      console.log("peer id:", peer.id);
+        if (socket.id) {
+            peer = new Peer(socket.id);
+            console.log("peer id:", peer.id);
 
-      peer.on("open", (peerId) => {
-        console.log("My peer ID is:", peerId);
+            peer.on("open", (peerId) => {
+                console.log("My peer ID is:", peerId);
 
-        if (connectedPeers.length > 0) {
-          for (const id of connectedPeers) {
-            const connection = peer.connect(id);
+                if (connectedPeers.length > 0) {
+                    for (const id of connectedPeers) {
+                        const connection = peer.connect(id);
 
-            connection.on("open", () => {
-              console.log(peerId, "connected to:", id);
-              connections.push(connection);
-              connection.send('request_blockchain')
+                        connection.on("open", () => {
+                            console.log(peerId, "connected to:", id);
+                            connections.push(connection);
+                            connection.send('request_blockchain')
 
-              connection.on("data", async function (data: unknown) {
-                console.log("Received data:", data);
+                            connection.on("data", async function (data: unknown) {
+                                console.log("Received data:", data);
 
-                  if (isBlockchainMessage(data)) {
-                      const { type, payload } = data;
 
-                      if (type === "NEW_BLOCKCHAIN") {
-                          // Synchronize the blockchain
-                          useStore.getState().updateChain(payload);
+                                if (isBlockchainMessage(data)) {
+                                    const { type, payload } = data;
 
-                      }
-                  } else if (isBlockchainSuggestion(data)) {
-                      const { type, suggestedBlock } = data;
+                                    if (type === "NEW_BLOCKCHAIN") {
+                                        // Synchronize the blockchain
+                                        useStore.getState().updateChain(payload);
 
-                      if (type === "SUGGEST_BLOCK") {
-                          // temp blockchain to check before updating the real one with a new block
-                          let tempChain: Blockchain = useStore.getState().blockchain;
-                          console.log("tempChain", tempChain);
+                                    }
+                                } else if (isBlockchainSuggestion(data)) {
+                                    console.log("got suggestion");
+                                    const { type, suggestedBlock } = data;
 
-                          // temp block containing proposed metadata
-                          let tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
+                                    if (type === "SUGGEST_BLOCK") {
+                                        // temp blockchain to check before updating the real one with a new block
+                                        const tempChain: Blockchain = useStore.getState().blockchain;
+                                        console.log("tempChain", tempChain);
 
-                           tempChain!.addBlock(tempBlock);
-                          // console.log("added new block tempChain", tempChain);
-                          if (await tempChain.isChainValid() == true) { 
-                              // add more checks
-                              console.log("chain has correct hash, shit worked")
+                                        // temp block containing proposed metadata
+                                        const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
 
-                              // send response to server 
-                              socket.send("VOTE_BLOCK_YES", tempBlock) //perhaps send along the id(connection array filter id)
+                                        await tempChain!.addBlock(tempBlock);
+                                         console.log("added new block tempChain", tempChain);
+                                        if (await tempChain.isChainValid() == true) {
+                                            // add more checks
+                                            console.log("chain has correct hash, shit worked")
 
-                          } else {
+                                            // send response to server 
+                                            socket.emit("VOTE_BLOCK_YES", tempChain.getLatestBlock()) //perhaps send along the id(connection array filter id)
+                                            return 
 
-                              console.error("Blockchain addition rejected due to hash missmatch")
-                              socket.send("VOTE_BLOCK_NO", tempBlock)
-                              // send response to server io.emit("VOTE_BLOCK_NO")
-                          }
-                      }
-                  }
-                  else if (data === 'type_request') {
-                  const arrayBuffer = await readFile('page.mhtml');
-                  connection.send(arrayBuffer)
-                  console.log('file sent')
-                } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
-                  console.log('received file')
-                  // Convert Uint8Array to ArrayBuffer if necessary
-                  const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
-                  await handleFileData('page.mhtml', arrayBuffer)
-                  console.log('converted and downloaded file')
-                }else {
-                  console.error("Received invalid data format:", data);
+                                        } else {
+
+                                            console.error("Blockchain addition rejected due to hash missmatch")
+                                            socket.emit("VOTE_BLOCK_NO", tempChain.getLatestBlock())
+                                            // send response to server io.emit("VOTE_BLOCK_NO")
+                                        }
+                                    }
+                                }
+                                else if (data === 'type_request') {
+                                    const arrayBuffer = await readFile('page.mhtml');
+                                    connection.send(arrayBuffer)
+                                    console.log('file sent')
+                                } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+                                    console.log('received file')
+                                    // Convert Uint8Array to ArrayBuffer if necessary
+                                    const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
+                                    await handleFileData('page.mhtml', arrayBuffer)
+                                    console.log('converted and downloaded file')
+                                } else {
+                                    console.error("Received invalid data format:", data);
+                                }
+                            });
+                        });
+                    }
+                } else {
+                    console.log("no other peers");
                 }
-              });
+
+                peer.on("connection", (conn) => {
+                    console.log("received connection", conn);
+                    connections.push(conn);
+
+                    conn.on("data", async function (data: unknown) {
+                        console.log("Received data:", data);
+
+                        if (isBlockchainMessage(data)) {
+                            const { type, payload } = data;
+
+                            if (type === "NEW_BLOCKCHAIN") {
+                                // Synchronize the blockchain
+                                useStore.getState().updateChain(payload);
+                            }
+                        } else if (isBlockchainSuggestion(data)) {
+                            const { type, suggestedBlock } = data;
+
+                            if (type === "SUGGEST_BLOCK") {
+                                // temp blockchain to check before updating the real one with a new block
+                                const tempChain: Blockchain = useStore.getState().blockchain;
+                                //console.log("tempChain", tempChain);
+
+                                // temp block containing proposed metadata
+                                const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
+                                console.log("suggested block", tempBlock);
+                                await tempChain!.addBlock(tempBlock);
+                                console.log("added new block tempChain", tempChain);
+                                console.log("this is what the server gets", tempChain.getLatestBlock())
+                                if (await tempChain.isChainValid() == true) {
+                                    // add more checks
+                                    console.log("chain has correct hash, shit worked")
+
+                                    // send response to server 
+                                    socket.emit("VOTE_BLOCK_YES", tempChain.getLatestBlock()) //perhaps send along the id(connection array filter id)
+                                    return
+
+                                } else {
+
+                                    console.error("Blockchain addition rejected due to hash missmatch")
+                                    socket.emit("VOTE_BLOCK_NO", tempChain.getLatestBlock())
+                                    // send response to server io.emit("VOTE_BLOCK_NO")
+                                }
+                            }
+                        } else if (data === 'request_blockchain') {
+                            conn.send({ type: 'NEW_BLOCKCHAIN', payload: useStore.getState().blockchain.chain })
+                        } else if (data === 'type_request') {
+                            const arrayBuffer = await readFile('page.mhtml');
+                            conn.send(arrayBuffer)
+                            console.log('file sent')
+                        } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+                            console.log('received file')
+                            // Convert Uint8Array to ArrayBuffer if necessary
+                            const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
+                            await handleFileData('page.mhtml', arrayBuffer)
+                            console.log('converted and downloaded file')
+                        } else {
+                            console.error("Received invalid data format:", data);
+                        }
+                    });
+                });
             });
-          }
-        } else {
-          console.log("no other peers");
         }
+    });
 
-        peer.on("connection", (conn) => {
-          console.log("received connection", conn);
-          connections.push(conn);
+    socket.on("connectedPeers", (data) => {
+        connectedPeers = data.filter((id: string) => id !== socket.id);
+        console.log(connectedPeers);
+    });
 
-          conn.on("data", async function (data: unknown) {
-            console.log("Received data:", data);
+    socket.on('init_blockchain', (data) => {
+        console.log("Received blockchain from server:", data);
 
-            if (isBlockchainMessage(data)) {
-              const { type, payload } = data;
+        // Update the blockchain in the Zustand store
+        useStore.getState().updateChain(data);
+    })
 
-              if (type === "NEW_BLOCKCHAIN") {
-                // Synchronize the blockchain
-                useStore.getState().updateChain(payload);
-              }
-            } else if (data === 'request_blockchain') {
-              conn.send({ type: 'NEW_BLOCKCHAIN', payload: useStore.getState().blockchain.chain }) 
-            } else if (data === 'type_request') {
-              const arrayBuffer = await readFile('page.mhtml');
-              conn.send(arrayBuffer)
-              console.log('file sent')
-            } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
-              console.log('received file')
-              // Convert Uint8Array to ArrayBuffer if necessary
-              const arrayBuffer = data instanceof Uint8Array ? data.buffer : data;
-              await handleFileData('page.mhtml', arrayBuffer)
-              console.log('converted and downloaded file')
-            }else {
-              console.error("Received invalid data format:", data);
-            }
-          });
-        });
-      });
-    }
-  });
+    socket.on('YES_VOTE', (data) => {
+        console.log("Voting concluded, block added to chain");
+        useStore.getState().updateChain(data);
+    })
 
-  socket.on("connectedPeers", (data) => {
-    connectedPeers = data.filter((id: string) => id !== socket.id);
-    console.log(connectedPeers);
-  });
-
-  socket.on('init_blockchain', (data) => {
-    console.log("Received blockchain from server:", data);
-
-    // Update the blockchain in the Zustand store
-    useStore.getState().updateChain(data);
-  })
-
+    socket.on('NO_VOTE', () => {
+        console.log("Voting concluded, suggested block was rejected");
+    })
 }
 
 // Function to handle incoming file data
@@ -217,19 +257,46 @@ export function send(data: Metadata) {
       }
     });
 }
-export function suggestBlock(data: Metadata) {
+export async function suggestBlock(data: Metadata) {
     console.log("Sending data to connections:", connections);
-    const metadata = data;
-            for (const conn of connections) {
-                if (conn.open) {
-                    // send only the data and set type to a specific name for validation 
-                    conn.send({ type: "SUGGEST_BLOCK", suggestedBlock: metadata });
-                    console.log("sent block for validation");
-                } else {
-                    console.log("connection not open");
-                }
+    const suggestedBlock = data;
+    /*
+    // added validation for the sender as well
+
+    // temp blockchain to check before updating the real one with a new block
+    const tempChain: Blockchain = useStore.getState().blockchain;
+    //console.log("tempChain", tempChain);
+
+    // temp block containing proposed metadata
+    const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
+    console.log(tempBlock);
+    tempChain!.addBlock(tempBlock);
+    // console.log("added new block tempChain", tempChain);
+    
+        if (await tempChain.isChainValid() == true) {
+            // add more checks
+            console.log("chain has correct hash, shit worked")
+
+            // send response to server 
+            socket.emit("VOTE_BLOCK_YES", tempChain.getLatestBlock()) //perhaps send along the id(connection array filter id)
+            return
+
+        } else {
+
+            console.error("Blockchain addition rejected due to hash missmatch")
+            socket.emit("VOTE_BLOCK_NO", tempChain.getLatestBlock)
+            // send response to server io.emit("VOTE_BLOCK_NO")
+        }*/
+        for (const conn of connections) {
+            if (conn.open) {
+                // send only the data and set type to a specific name for validation 
+                conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
+                console.log("sent block for validation", suggestedBlock);
+            } else {
+                console.log("connection not open");
             }
         }
+}
 
 
 interface BlockchainMessage {

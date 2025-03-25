@@ -7,8 +7,8 @@ import { Blockchain } from "./blockchain.js";
 
 const app = express();
 const server = createServer(app);
-const yesVotes = 0;
-const noVotes = 0;
+let yesVotes = 0;
+let noVotes = 0;
 app.use(cors());
 app.use(express.json());
 
@@ -56,13 +56,14 @@ io.on("connection", (socket) => {
 
     io.emit("connectedPeers", connectedPeers);
   });
-});
+
 
 // Either combine to one with an if statement or share variables between them on a single listener
 // should have a "votes done" check in both or the combined, look at connectedPeers.length and finalize the vote if full or majority as compared to the array
 socket.on('VOTE_BLOCK_YES', (data) => {
     console.log("Received vote in the possitive:", data);
     yesVotes = yesVotes++;
+    console.log("yesVotes:", yesVotes);
     if (yesVotes >= (connectedPeers.length / 2)) { 
         io.emit("YES_VOTE", data);
         // reset the voting variables
@@ -110,7 +111,7 @@ socket.on('VOTE_BLOCK_NO', (data) => {
         }
     }
 });
-
+});
 server.listen(3000, () => {
   console.log("server running at http://localhost:3000");
 });

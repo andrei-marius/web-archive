@@ -49,10 +49,10 @@ export class Blockchain {
 
   getLatestBlock(): Block {
     return this.chain[this.chain.length - 1];
-  }
+    }
 
   async addBlock(newBlock: Block): Promise<void> {
-    newBlock.previousHash = this.getLatestBlock().hash;
+      newBlock.previousHash = this.getLatestBlock().hash;
     await newBlock.calculateHash();
     this.chain = [...this.chain, newBlock];
   }
