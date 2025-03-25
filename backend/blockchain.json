@@ -1,0 +1,46 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "timestamp": 1742912965130,
+      "data": "Genesis Block",
+      "previousHash": "",
+      "hash": "1783e5f6129281edcd548ec8c6a61bd439ebf1fca344c3a27eee7b937fa73e1a"
+    },
+    {
+      "index": 1,
+      "timestamp": 1742912976957,
+      "data": {
+        "url": "https://www.youtube.com/watch?v=RMXMVy9BQNY&ab_channel=BoyBoy",
+        "title": "The Army Is Paying Youtubers To Recruit You - YouTube",
+        "description": "Try Odoo for free today: https://www.odoo.com/r/zRMtWe're Twitch Streamers now: https://www.twitch.tv/boyboyofficialGo to https://www.patreon.com/Boy_Boy for...",
+        "keywords": "video, sharing, camera phone, video phone, free, upload",
+        "timestamp": "2025-03-25T14:29:36.380Z",
+        "screenshot": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\screenshot.png",
+        "mhtmlFile": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\page.mhtml"
+      },
+      "previousHash": "1783e5f6129281edcd548ec8c6a61bd439ebf1fca344c3a27eee7b937fa73e1a",
+      "hash": "f1e142e23ba2f30a8cf26999fad1776efc140f82040397e244652f8d934bd426"
+    }
+  ],
+  "keywordIndex": {
+    "video": [
+      1
+    ],
+    "sharing": [
+      1
+    ],
+    "camera phone": [
+      1
+    ],
+    "video phone": [
+      1
+    ],
+    "free": [
+      1
+    ],
+    "upload": [
+      1
+    ]
+  }
+}
