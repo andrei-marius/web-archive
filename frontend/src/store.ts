@@ -4,15 +4,15 @@ import { Metadata } from "./types";
 
 interface BlockchainState {
   blockchain: Blockchain;
-  folderHandle: FileSystemDirectoryHandle | null;
+  // folderHandle: FileSystemDirectoryHandle | null;
   addBlock: (data: Metadata) => Promise<void>;
   updateChain: (chain: Block[]) => void;
-  setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
+  // setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
 }
 
 const useStore = create<BlockchainState>((set) => ({
   blockchain: new Blockchain(),
-  folderHandle: null,
+  // folderHandle: null,
   addBlock: async (data) => {
     const { blockchain } = useStore.getState();
     const newBlock = new Block(blockchain!.chain.length, Date.now(), data);
@@ -23,7 +23,7 @@ const useStore = create<BlockchainState>((set) => ({
     const newBlockchain = new Blockchain(chain);
     set({ blockchain: newBlockchain });
   },
-  setFolderHandle: (handle) => set({ folderHandle: handle }),
+  // setFolderHandle: (handle) => set({ folderHandle: handle }),
 }));
 
 export default useStore;

@@ -16,6 +16,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Metadata } from "./types";
 import { v4 as uuidv4 } from "uuid";
+import JSZip from 'jszip';
+
 
 const App: React.FC = () => {
   const [url, setUrl] = useState<string>("");
@@ -23,108 +25,205 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const blockchain = useStore((state) => state.blockchain.chain);
-  const folderHandle = useStore((state) => state.folderHandle);
-  const setFolderHandle = useStore((state) => state.setFolderHandle);
+  // const folderHandle = useStore((state) => state.folderHandle);
+  // const setFolderHandle = useStore((state) => state.setFolderHandle);
 
   useEffect(() => {
     init();
   }, []);
 
-  const requestFolderAccess = async () => {
-    try {
-      const handle = await window.showDirectoryPicker();
-      setFolderHandle(handle);
-      console.log("Folder access granted:", handle);
-      return handle;
-    } catch (err) {
-      console.error("User denied folder access or an error occurred:", err);
-      return null;
+  // const requestFolderAccess = async () => {
+  //   try {
+  //     const handle = await window.showDirectoryPicker();
+  //     setFolderHandle(handle);
+  //     console.log("Folder access granted:", handle);
+  //     return handle;
+  //   } catch (err) {
+  //     console.error("User denied folder access or an error occurred:", err);
+  //     return null;
+  //   }
+  // };
+
+  interface OPFSFile {
+    path: string;
+    name: string;
+    size: number;
+    type: string;
+    lastModified: number;
+    content: string | ArrayBuffer | null;
+  }
+  
+  /**
+   * Recursively reads all files from OPFS, including subdirectories, for testing purposes
+   * @param directoryPath Starting directory path (empty for root)
+   * @param readContents Whether to read file contents
+   * @returns Promise with array of file objects
+  */
+  async function readAllFilesFromOPFS(
+    directoryPath: string = '',
+    readContents: boolean = true
+  ): Promise<OPFSFile[]> {
+    const root = await navigator.storage.getDirectory();
+    const results: OPFSFile[] = [];
+    
+    async function traverseDirectory(
+      currentDirHandle: FileSystemDirectoryHandle,
+      currentPath: string
+    ): Promise<void> {
+      for await (const [name, handle] of currentDirHandle.entries()) {
+        const fullPath = currentPath ? `${currentPath}/${name}` : name;
+        
+        if (handle.kind === 'file') {
+          const file = await (handle as FileSystemFileHandle).getFile();
+          const fileInfo: OPFSFile = {
+            path: fullPath,
+            name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
+            content: null
+          };
+          
+          if (readContents) {
+            fileInfo.content = file.type.startsWith('text/') 
+              ? await file.text() 
+              : await file.arrayBuffer();
+          }
+          
+          results.push(fileInfo);
+        } else if (handle.kind === 'directory') {
+          await traverseDirectory(handle as FileSystemDirectoryHandle, fullPath);
+        }
+      }
     }
-  };
+    
+    const startingDir = directoryPath === '' 
+      ? root 
+      : await root.getDirectoryHandle(directoryPath);
+    
+    await traverseDirectory(startingDir, directoryPath);
+    return results;
+  }
+
+  async function logAllFiles() {
+    try {
+      const files = await readAllFilesFromOPFS();
+      console.log('All files in OPFS:', files);
+      
+      files.forEach(file => {
+        if (typeof file.content === 'string') {
+          console.log(`Text file ${file.path}: ${file.content.length} chars`);
+        } else if (file.content instanceof ArrayBuffer) {
+          console.log(`Binary file ${file.path}: ${file.content.byteLength} bytes`);
+        }
+      });
+    } catch (error) {
+      console.error('Error reading files:', error);
+    }
+  }
+
+  logAllFiles();
 
   const save = async () => {
-    if (preview) {
-      try {
-        const handle = await requestFolderAccess();
-        if (handle) {
-          // Convert the screenshotBuffer object to a Uint8Array
-          const screenshotArray = new Uint8Array(
-            Object.values(preview.screenshotBuffer)
-          );
+    if (!preview) return;
 
-          // Create a Blob from the Uint8Array
-          const screenshotBlob = new Blob([screenshotArray], {
-            type: "image/png",
-          });
+    try {
+      const screenshotArray = new Uint8Array(Object.values(preview.screenshotBuffer));
+      const metadataJson = JSON.stringify(preview, null, 2);
+      const files = [
+        { name: `screenshot_${preview.id}.png`, data: screenshotArray, type: 'image/png' },
+        { name: `page_${preview.id}.mhtml`, data: preview.mhtmlContent, type: 'message/rfc822' },
+        { name: `metadata_${preview.id}.json`, data: metadataJson, type: 'application/json' }
+      ];
 
-          // Save the screenshot
-          const screenshotFileHandle = await handle.getFileHandle(
-            `screenshot_${preview.id}.png`,
-            {
-              create: true,
-            }
-          );
-          const screenshotWritable =
-            await screenshotFileHandle.createWritable();
-          await screenshotWritable.write(screenshotBlob);
-          await screenshotWritable.close();
-
-          // Save the MHTML file
-          const mhtmlFileHandle = await handle.getFileHandle(
-            `page_${preview.id}.mhtml`,
-            { create: true }
-          );
-          const mhtmlWritable = await mhtmlFileHandle.createWritable();
-          await mhtmlWritable.write(preview.mhtmlContent);
-          await mhtmlWritable.close();
-
-          // Prepare the metadata object with file paths
-          // const metadataWithPaths = {
-          //   ...preview,
-          //   screenshot: `${handle.name}/screenshot_${preview.id}.png`,
-          //   mhtmlFile: `${handle.name}/page_${preview.id}.mhtml`,
-          //   metadataFile: `${handle.name}/metadata_${preview.id}.json`,
-          // };
-
-          // // Update the preview with file paths
-          // setPreview(metadataWithPaths);
-
-          // Convert the metadata to a JSON string
-          const metadataJson = JSON.stringify(preview, null, 2);
-
-          // Save the metadata as a JSON file
-          const metadataFileHandle = await handle.getFileHandle(
-            `metadata_${preview.id}.json`,
-            { create: true }
-          );
-          const metadataWritable = await metadataFileHandle.createWritable();
-          await metadataWritable.write(metadataJson);
-          await metadataWritable.close();
-
-          console.log("Files saved successfully!");
-          setUrl("");
+      const saveToOpfs = async () => {
+        try {
+          const root = await navigator.storage.getDirectory();
+          
+          for (const file of files) {
+            const fileHandle = await root.getFileHandle(file.name, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(file.data);
+            await writable.close();
+          }
+          console.log('Files saved to OPFS root successfully!');
+        } catch (error) {
+          console.error('Error saving to OPFS:', error);
         }
-      } catch (error) {
-        console.error("Error:", error);
-      }
+      };
+
+      const saveToUserFolder = async () => {
+        try {
+          if ('showDirectoryPicker' in window) {
+            const dirHandle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+            
+            for (const file of files) {
+              const fileHandle = await dirHandle.getFileHandle(file.name, { create: true });
+              const writable = await fileHandle.createWritable();
+              await writable.write(file.data);
+              await writable.close();
+            }
+            console.log('Files saved to user-selected folder!');
+            return true;
+          }
+          
+          const zip = new JSZip();
+          files.forEach(file => {
+            zip.file(file.name, new Blob([file.data], { type: file.type }));
+          });
+          
+          const content = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(content);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `preview_${preview.id}.zip`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+          console.log('Files zipped and downloaded!');
+          return true;
+
+        } catch (error) {
+          console.error('Error saving to user folder:', error);
+          
+          files.forEach(file => {
+            const blob = new Blob([file.data], { type: file.type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+          });
+          console.log('Files downloaded individually!');
+          return false;
+        }
+      };
+
+      await Promise.all([saveToOpfs(), saveToUserFolder()]);
+      
+      setUrl("");
+
+    } catch (error) {
+      console.error("Error saving files:", error);
+      alert(`Error saving files: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
-  const listFiles = async () => {
-    if (!folderHandle) {
-      console.error("No folder access granted");
-      return;
-    }
+  // const listFiles = async () => {
+  //   if (!folderHandle) {
+  //     console.error("No folder access granted");
+  //     return;
+  //   }
 
-    const files = [];
-    for await (const entry of folderHandle.values()) {
-      if (entry.kind === "file") {
-        files.push(entry.name);
-      }
-    }
-    console.log("Files in directory:", files);
-    return files;
-  };
+  //   const files = [];
+  //   for await (const entry of folderHandle.values()) {
+  //     if (entry.kind === "file") {
+  //       files.push(entry.name);
+  //     }
+  //   }
+  //   console.log("Files in directory:", files);
+  //   return files;
+  // };
 
   async function generate() {
     if (url.trim()) {
@@ -369,12 +468,10 @@ const App: React.FC = () => {
                                 />
                               </div>
                               <Button
-                                disabled={!folderHandle}
+                                // disabled={!folderHandle}
                                 className="cursor-pointer"
                                 variant="outline"
-                                onClick={(e) =>
-                                  handleDownloadMHTML(e, block.data.id)
-                                }
+                                onClick={(e) => typeof block.data !== 'string' && handleDownloadMHTML(e, block.data.id)}
                               >
                                 Download MHTML file
                               </Button>

@@ -164,51 +164,109 @@ function isMetadata(data: unknown): data is Metadata {
   );
 }
 
-// Function to handle incoming file data
-export const handleFileData = async (filename: string, fileData: ArrayBuffer) => {
-  const folderHandle = useStore.getState().folderHandle;
-
-  if (!folderHandle) {
-    console.error("No folder access granted");
+export const handleFileData = async (filename: string, fileData: ArrayBuffer): Promise<void> => {
+  if (!fileData || fileData.byteLength === 0) {
+    console.error("Invalid file data received");
     return;
   }
 
-  try {
-    // Create a new file handle in the folder
-    const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
+  const saveToOpfs = async (): Promise<boolean> => {
+    try {
+      const root = await navigator.storage.getDirectory();
+      const fileHandle = await root.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+      
+      await writable.write(new Blob([fileData]));
+      await writable.close();
+      
+      const savedFile = await fileHandle.getFile();
+      if (savedFile.size !== fileData.byteLength) {
+        console.error("File size mismatch after write");
+        return false;
+      }
+      
+      console.log(`Verified save of "${filename}" to OPFS (${fileData.byteLength} bytes)`);
+      return true;
+    } catch (error) {
+      console.error('OPFS save error:', error);
+      return false;
+    }
+  };
 
-    // Create a writable stream to the file
-    const writableStream = await fileHandle.createWritable();
+  const saveToLocal = async (): Promise<boolean> => {
+    try {
+      const blob = new Blob([fileData], { type: 'multipart/related' });
+      
+      if ('showSaveFilePicker' in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: 'Web Page Archive',
+              accept: { 'multipart/related': ['.mhtml'] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          console.log(`Saved "${filename}" locally`);
+          return true;
+        } catch (error) {
+          console.warn('File System Access API failed:', error);
+        }
+      }
 
-    // Write the ArrayBuffer to the file
-    await writableStream.write(fileData);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      console.log(`Downloaded "${filename}" as fallback`);
+      return true;
+    } catch (error) {
+      console.error('Local save failed:', error);
+      return false;
+    }
+  };
 
-    // Close the stream to save the file
-    await writableStream.close();
+  const [opfsResult, localResult] = await Promise.allSettled([
+    saveToOpfs(),
+    saveToLocal()
+  ]);
 
-    console.log(`File "${filename}" saved successfully`);
-  } catch (err) {
-    console.error("Error saving file:", err);
+  if (opfsResult.status === 'rejected' || localResult.status === 'rejected') {
+    console.error('File save completed with errors');
   }
 };
 
-// Function to read a specific file
-const readFile = async (filename: string) => {
-  const folderHandle = useStore.getState().folderHandle;
-
-  if (!folderHandle) {
-    console.error("No folder access granted");
-    return;
-  }
-
+const readFile = async (filename: string): Promise<ArrayBuffer | undefined> => {
   try {
-    const fileHandle = await folderHandle.getFileHandle(filename);
+    const root = await navigator.storage.getDirectory();
+    
+    try {
+      await root.getFileHandle(filename);
+    } catch (err) {
+      console.warn(`File "${filename}" not found in OPFS`);
+      return undefined;
+    }
+    
+    const fileHandle = await root.getFileHandle(filename);
     const file = await fileHandle.getFile();
-    const fileData = await file.arrayBuffer();
-    console.log("File data:", fileData);
-    return fileData;
+    
+    if (file.size === 0) {
+      console.warn(`File "${filename}" is empty`);
+      return undefined;
+    }
+    
+    return await file.arrayBuffer();
   } catch (err) {
-    console.error("Error reading file:", err);
+    console.error("Error reading file from OPFS:", err);
+    return undefined;
   }
 };
 
