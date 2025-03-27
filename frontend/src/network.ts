@@ -54,13 +54,14 @@ export function init() {
                                         // made a clone so as to not refence the same object un useStore
                                         const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
 
-                                        console.log("Before adding block:", JSON.parse(JSON.stringify(tempChain)));
+                                        console.log("Before adding block (stringified so no object methods)::", JSON.parse(JSON.stringify(tempChain)));
                                         
                                         // temp block containing proposed metadata
                                         const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
 
                                         await tempChain!.addBlock(tempBlock);
-                                         console.log("added new block tempChain", tempChain);
+                                        console.log("added new block tempChain", tempChain);
+                                        console.log("latest block", tempChain.getLatestBlock());
                                         if (await tempChain.isChainValid() == true) {
                                             // add more checks
                                             console.log("chain has correct hash, shit worked")
@@ -122,12 +123,13 @@ export function init() {
                                 // made a clone so as to not refence the same object un useStore
                                 const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
 
-                                console.log("Before adding block:", JSON.parse(JSON.stringify(tempChain)));
+                                console.log("Before adding block (stringified so no object methods):", JSON.parse(JSON.stringify(tempChain)));
 
                                 // temp block containing proposed metadata
                                 const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
                                 await tempChain!.addBlock(tempBlock);
                                 console.log("added new block tempChain", tempChain);
+                                console.log("latest block", tempChain.getLatestBlock());
                                 if (await tempChain.isChainValid() == true) {
                                     // add more checks
                                     console.log("chain has correct hash, shit worked")

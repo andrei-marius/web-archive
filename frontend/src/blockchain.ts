@@ -11,13 +11,14 @@ export class Block {
     index: number,
     timestamp: number,
     data: Metadata | string,
-    previousHash: string = ""
+    previousHash: string = "",
+    hash?: string
   ) {
     this.index = index;
     this.timestamp = timestamp;
     this.data = data;
     this.previousHash = previousHash;
-    this.hash = "";
+    this.hash = hash || "";
   }
 
   async calculateHash(): Promise<void> {
@@ -34,18 +35,20 @@ export class Blockchain {
   public chain: Block[];
 
   constructor(chain?: Block[]) {
-    this.chain = chain || []
-      // ? chain.map(
-      //     (block) =>
-      //       new Block(
-      //         block.index,
-      //         block.timestamp,
-      //         block.data,
-      //         block.previousHash
-      //       )
-      //   )
-      // : [];
-  }
+    this.chain = chain
+       ? chain.map(
+           (block) =>
+             new Block(
+               block.index,
+               block.timestamp,
+               block.data,
+               block.previousHash,
+               block.hash
+             )
+         )
+       : [];
+    }
+
 
   getLatestBlock(): Block {
     return this.chain[this.chain.length - 1];
