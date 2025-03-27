@@ -62,7 +62,7 @@ io.on("connection", (socket) => {
 // should have a "votes done" check in both or the combined, look at connectedPeers.length and finalize the vote if full or majority as compared to the array
 socket.on('VOTE_BLOCK_YES', (data) => {
     console.log("Received vote in the possitive:", data);
-    yesVotes = yesVotes++;
+    yesVotes = yesVotes = yesVotes + 1;
     console.log("yesVotes:", yesVotes);
     if (yesVotes >= (connectedPeers.length / 2)) { 
         io.emit("YES_VOTE", data);
@@ -74,7 +74,6 @@ socket.on('VOTE_BLOCK_YES', (data) => {
     } 
     if (yesVotes + noVotes >= connectedPeers.length) {
         if (yesVotes >= noVotes) {
-            let block
             io.emit("YES_VOTE", data);
             // reset the voting variables
             yesVotes = 0;
@@ -90,7 +89,7 @@ socket.on('VOTE_BLOCK_YES', (data) => {
 
 socket.on('VOTE_BLOCK_NO', (data) => {
     console.log("Received vote in the negative:", data);
-    noVotes = noVotes++;
+    noVotes = noVotes = noVotes +1;
     if (noVotes > (connectedPeers.length / 2)) {
         io.emit("NO_VOTE")
         // io.emit("YES_VOTE" or even "NEW_BLOCKCHAIN" since the block updates after this, blockchain.chain(take the data and use it here to compute the new block))
@@ -98,7 +97,6 @@ socket.on('VOTE_BLOCK_NO', (data) => {
     }
     if (yesVotes + noVotes >= connectedPeers.length) {
         if (yesVotes >= noVotes) {
-            let block
             io.emit("YES_VOTE", data);
             // reset the voting variables
             yesVotes = 0;
