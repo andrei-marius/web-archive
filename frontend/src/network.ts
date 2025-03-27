@@ -61,19 +61,19 @@ export function init() {
 
                                         await tempChain!.addBlock(tempBlock);
                                         console.log("added new block tempChain", tempChain);
-                                        console.log("latest block", tempChain.getLatestBlock());
+                                        // console.log("latest block", tempChain.getLatestBlock());
                                         if (await tempChain.isChainValid() == true) {
                                             // add more checks
-                                            console.log("chain has correct hash, shit worked")
+                                            console.log("chain has correct hash, shit worked");
 
                                             // send response to server 
-                                            socket.emit("VOTE_BLOCK_YES", tempChain) //perhaps send along the id(connection array filter id)
+                                            socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
                                             return 
 
                                         } else {
 
-                                            console.error("Blockchain addition rejected due to hash missmatch")
-                                            socket.emit("VOTE_BLOCK_NO", tempChain)
+                                            console.error("Blockchain addition rejected due to hash missmatch");
+                                            socket.emit("VOTE_BLOCK_NO", tempChain);
                                             // send response to server io.emit("VOTE_BLOCK_NO")
                                         }
                                     }
@@ -132,16 +132,16 @@ export function init() {
                                 console.log("latest block", tempChain.getLatestBlock());
                                 if (await tempChain.isChainValid() == true) {
                                     // add more checks
-                                    console.log("chain has correct hash, shit worked")
+                                    console.log("chain has correct hash, shit worked");
 
                                     // send response to server 
-                                    socket.emit("VOTE_BLOCK_YES", tempChain) //perhaps send along the id(connection array filter id)
+                                    socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
                                     return
 
                                 } else {
 
-                                    console.error("Blockchain addition rejected due to hash missmatch")
-                                    socket.emit("VOTE_BLOCK_NO", tempChain)
+                                    console.error("Blockchain addition rejected due to hash missmatch");
+                                    socket.emit("VOTE_BLOCK_NO", tempChain);
                                     // send response to server io.emit("VOTE_BLOCK_NO")
                                 }
                             }
@@ -272,33 +272,34 @@ export function send(data: Metadata) {
 export async function suggestBlock(data: Metadata) {
     console.log("Sending data to connections:", connections);
     const suggestedBlock = data;
-    /*
-    // added validation for the sender as well
-
+    
     // temp blockchain to check before updating the real one with a new block
-    const tempChain: Blockchain = useStore.getState().blockchain;
-    //console.log("tempChain", tempChain);
+
+    //const tempChain: Blockchain = useStore.getState().blockchain;
+
+    // made a clone so as to not refence the same object un useStore
+    const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+
+    console.log("Before adding block (stringified so no object methods):", JSON.parse(JSON.stringify(tempChain)));
 
     // temp block containing proposed metadata
     const tempBlock = new Block(tempChain!.chain.length, Date.now(), suggestedBlock);
-    console.log(tempBlock);
-    tempChain!.addBlock(tempBlock);
-    // console.log("added new block tempChain", tempChain);
-    
-        if (await tempChain.isChainValid() == true) {
-            // add more checks
-            console.log("chain has correct hash, shit worked")
+    await tempChain!.addBlock(tempBlock);
+    console.log("added new block tempChain", tempChain);
+    // console.log("latest block", tempChain.getLatestBlock());
+    if (await tempChain.isChainValid() == true) {
+        // add more checks
+        console.log("chain has correct hash, shit worked");
 
-            // send response to server 
-            socket.emit("VOTE_BLOCK_YES", tempChain) //perhaps send along the id(connection array filter id)
-            return
+        // send response to server 
+        socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
 
-        } else {
+    } else {
 
-            console.error("Blockchain addition rejected due to hash missmatch")
-            socket.emit("VOTE_BLOCK_NO", tempChain)
-            // send response to server io.emit("VOTE_BLOCK_NO")
-        }*/
+        console.error("Blockchain addition rejected due to hash missmatch")
+        socket.emit("VOTE_BLOCK_NO", tempChain)
+        // send response to server io.emit("VOTE_BLOCK_NO")
+    }
         for (const conn of connections) {
             if (conn.open) {
                 // send only the data and set type to a specific name for validation 

@@ -64,7 +64,7 @@ socket.on('VOTE_BLOCK_YES', (data) => {
     console.log("Received vote in the possitive:", data);
     yesVotes = yesVotes = yesVotes + 1;
     console.log("yesVotes:", yesVotes);
-    if (yesVotes >= (connectedPeers.length / 2)) { 
+    if (yesVotes >= connectedPeers.length) { 
         io.emit("YES_VOTE", data);
         // reset the voting variables
         yesVotes = 0;
