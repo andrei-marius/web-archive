@@ -48,16 +48,17 @@ const App: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
-
+  
         const data = await response.json();
-
+  
+        
+  
         if (data.success) {
           console.log("Scraped metadata:", data.metadata);
-
-          await useStore.getState().addBlock(data.metadata);
-
+          send(data.metadata);
+  
           const latestBlock = useStore.getState().blockchain.getLatestBlock();
-
+  
           // Get stuff for backend
           await fetch("http://localhost:3000/blockchain", {
             method: "POST",
@@ -67,8 +68,8 @@ const App: React.FC = () => {
               hash: latestBlock.hash,
             }),
           });
-
-          setUrl("");
+  
+          setUrl(""); 
         } else {
           console.error("Error scraping page:", data.error);
         }
@@ -77,12 +78,13 @@ const App: React.FC = () => {
       }
     }
   };
+  
 
   const searchByKeyword = async () => {
     if (keyword.trim()) {
       try {
         const response = await fetch("http://localhost:3000/search", {
-          method: "POST",
+          method: "GET",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keyword }),
         });

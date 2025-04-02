@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import cors from "cors";
 import scrapePage from "./puppeteer.js";
-import { Block, Blockchain } from "./blockchain.js"; // Import ES Modules
+import { Block, Blockchain } from "./blockchain.js"; 
 
 const app = express();
 const server = createServer(app);
@@ -12,11 +12,11 @@ app.use(express.json());
 
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow cross-origin requests
+    origin: "*", 
   },
 });
 
-// Initialize the Blockchain instance
+// Init
 const blockchain = new Blockchain();
 
 app.post('/scrape', async (req, res) => {

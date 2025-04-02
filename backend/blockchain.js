@@ -19,7 +19,7 @@ export class Blockchain {
   constructor() {
     this.chain = [this.createGenesisBlock()];
     this.keywordIndex = {}; // Hashtable to store keywords and their associated block indexes
-    this.loadBlockchainFromFile(); // Load blockchain data from file on initialization
+    this.loadBlockchainFromFile(); 
   }
 
   createGenesisBlock() {
@@ -28,28 +28,52 @@ export class Blockchain {
     return genesisBlock;
   }
 
-  addBlock(newBlock) {
+  async addBlock(newBlock) {
     newBlock.previousHash = this.chain[this.chain.length - 1].hash;
-    newBlock.calculateHash();
+    await newBlock.calculateHash();
     this.chain.push(newBlock);
-
+  
+    // Get keywords
+    let keywords = [];
+  
+    if (newBlock.data.keywords && newBlock.data.keywords.length > 0) {
+      keywords = Array.isArray(newBlock.data.keywords)
+        ? newBlock.data.keywords
+        : newBlock.data.keywords.split(",").map(keyword => keyword.trim());
+    } else if (newBlock.data.title) {
+      keywords = this.extractKeywordsFromTitle(newBlock.data.title);
+    }
+  
     // Update keyword index
-    const keywords = newBlock.data.keywords.split(',').map(keyword => keyword.trim());
     keywords.forEach(keyword => {
       if (!this.keywordIndex[keyword]) {
         this.keywordIndex[keyword] = [];
       }
       this.keywordIndex[keyword].push(newBlock.index);
     });
-
-    // Save updated blockchain to file
+  
     this.saveBlockchainToFile();
   }
-
+  
+  //Keyw
   searchByKeyword(keyword) {
-    const blockIndexes = this.keywordIndex[keyword] || [];
-    return blockIndexes.map(index => this.chain[index]);
+    if (!keyword) return [];
+  
+    const lowerKeyword = keyword.toLowerCase();
+    let matchedBlocks = [];
+  
+    this.chain.forEach((block) => {
+      const blockKeywords = block.data.keywords ? block.data.keywords.toLowerCase() : "";
+      const blockTitle = block.data.title ? block.data.title.toLowerCase() : "";
+  
+      if (blockKeywords.includes(lowerKeyword) || blockTitle.includes(lowerKeyword)) {
+        matchedBlocks.push(block);
+      }
+    });
+  
+    return matchedBlocks;
   }
+  
 
   // Load the blockchain from file
   loadBlockchainFromFile() {
@@ -57,16 +81,30 @@ export class Blockchain {
       if (fs.existsSync('blockchain.json')) {
         const data = fs.readFileSync('blockchain.json', 'utf8');
         const parsedData = JSON.parse(data);
-        this.chain = parsedData.chain || [this.createGenesisBlock()];
+  
+        // Ensure the loaded blockchain has a valid chain, otherwise create a new genesis block
+        if (!parsedData.chain || parsedData.chain.length === 0) {
+          console.log("No valid chain found in blockchain.json, creating a new genesis block.");
+          this.chain = [this.createGenesisBlock()];
+        } else {
+          this.chain = parsedData.chain;
+        }
+  
         this.keywordIndex = parsedData.keywordIndex || {};
         console.log('Blockchain loaded from file');
+      } else {
+        // If file doesn't exist, create a new blockchain with the genesis block
+        this.chain = [this.createGenesisBlock()];
+        console.log("blockchain.json does not exist. Created new blockchain with a genesis block.");
       }
     } catch (error) {
       console.error('Error loading blockchain from file:', error);
+      this.chain = [this.createGenesisBlock()]; // Default to a new genesis block in case of error
     }
   }
+  
 
-  // Save chain locally, and update when cahnges are made through frontned
+  // Save chain locally, and update when cahnges are made through frontned (not blockchain.json changes)
   saveBlockchainToFile() {
     try {
       const blockchainData = {
