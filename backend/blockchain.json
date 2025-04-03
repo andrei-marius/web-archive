@@ -1,0 +1,27 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "timestamp": 1743676057187,
+      "data": "Genesis Block",
+      "previousHash": "",
+      "hash": "b6c67603dfcab4277888c162e48892eef0aa36889c0909c77012736afebfb159"
+    },
+    {
+      "index": 1,
+      "timestamp": 1743676071234,
+      "data": {
+        "url": "http://localhost:5173/",
+        "title": "Vite + React + TS",
+        "description": "No description",
+        "keywords": "No keywords",
+        "timestamp": "2025-04-03T10:27:50.987Z",
+        "screenshot": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\screenshot.png",
+        "mhtmlFile": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\page.mhtml"
+      },
+      "previousHash": "b6c67603dfcab4277888c162e48892eef0aa36889c0909c77012736afebfb159",
+      "hash": "16e4467e9ed009b7db8242dbf102e4f77730e26a6c3f82315f2cccf8f716ae6e"
+    }
+  ],
+  "keywordIndex": {}
+}

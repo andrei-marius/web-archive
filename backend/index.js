@@ -77,24 +77,21 @@ app.get('/keyword-index', (req, res) => {
 
 app.post("/blockchain", async (req, res) => {
   try {
-    console.log("Received data:", req.body);
-    
-    const { metadata, hash } = req.body;
-    
-    if (!metadata || !hash) {
-      console.error("Missing metadata or hash", req.body);
-      return res.status(400).json({ success: false, message: "Missing metadata or hash" });
+    const { chain } = req.body;  // Receive the ENTIRE chain from frontend
+
+    // Validate the new chain (optional but recommended)
+    if (!chain || !Array.isArray(chain) || chain.length === 0) {
+      return res.status(400).json({ success: false, error: "Invalid chain" });
     }
 
-    const newBlock = new Block(blockchain.chain.length, Date.now(), metadata, metadata.keywords);
-    newBlock.hash = hash;
+    // Replace the backend's chain entirely
+    blockchain.chain = chain;  
+    blockchain.saveBlockchainToFile();  // Persist to blockchain.json
 
-    await blockchain.addBlock(newBlock);
-
-    res.json({ success: true, message: "Block added to backend blockchain" });
+    res.json({ success: true });
   } catch (error) {
-    console.error("Error adding block to backend blockchain:", error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error("Error replacing chain:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
