@@ -8,4 +8,4 @@ http://localhost:3000/keyword-index -- Full Look at all Keywords assosiated with
 
 
 
-http://localhost:3000/keyword-index?keywords=yourKeyWordHere -- Specific keyword lookup, this will give you other keywords assosiated with the block, along with block Index
+http://localhost:3000/search?keyword=yourKeyWordHere -- Specific keyword lookup, this will give you other keywords assosiated with the block, along with block Index
