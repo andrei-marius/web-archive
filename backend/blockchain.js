@@ -82,7 +82,7 @@ export class Blockchain {
         const data = fs.readFileSync('blockchain.json', 'utf8');
         const parsedData = JSON.parse(data);
   
-        // Ensure the loaded blockchain has a valid chain, otherwise create a new genesis block
+        // Ensure the blockchain has a chain, otherwise create a new genesis block
         if (!parsedData.chain || parsedData.chain.length === 0) {
           console.log("No valid chain found in blockchain.json, creating a new genesis block.");
           this.chain = [this.createGenesisBlock()];

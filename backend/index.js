@@ -40,7 +40,7 @@ app.get('/blockchain', (req, res) => {
   }
 });
 
-// Search by keyword endpoint
+// Search by keyword
 app.get('/search', (req, res) => {
   const { keyword } = req.query;
 
@@ -48,13 +48,25 @@ app.get('/search', (req, res) => {
     return res.status(400).json({ success: false, message: "Keyword is required" });
   }
 
-  const results = blockchain.searchByKeyword(keyword);
-  if (results.length === 0) {
-    return res.status(404).json({ success: false, message: `No blocks found with keyword: ${keyword}` });
-  }
+  // Search by keyword
+  const keywordResults = blockchain.searchByKeyword(keyword);
   
-  res.json({ success: true, blocks: results });
+  if (keywordResults.length > 0) {
+    return res.json({ success: true, blocks: keywordResults });
+  }
+
+  // If no kyewords, use title
+  const titleResults = blockchain.chain.filter(block => 
+    block.title && block.title.toLowerCase().includes(keyword.toLowerCase())
+  );
+
+  if (titleResults.length === 0) {
+    return res.status(404).json({ success: false, message: `No blocks found with keyword or title: ${keyword}` });
+  }
+
+  res.json({ success: true, blocks: titleResults });
 });
+
 
 app.get('/keyword-index', (req, res) => {
   try {
@@ -78,15 +90,8 @@ app.get('/keyword-index', (req, res) => {
 app.post("/blockchain", async (req, res) => {
   try {
     const { chain } = req.body;  // Receive the ENTIRE chain from frontend
-
-    // Validate the new chain (optional but recommended)
-    if (!chain || !Array.isArray(chain) || chain.length === 0) {
-      return res.status(400).json({ success: false, error: "Invalid chain" });
-    }
-
-    // Replace the backend's chain entirely
     blockchain.chain = chain;  
-    blockchain.saveBlockchainToFile();  // Persist to blockchain.json
+    blockchain.saveBlockchainToFile(); 
 
     res.json({ success: true });
   } catch (error) {
