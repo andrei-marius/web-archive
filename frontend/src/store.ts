@@ -4,15 +4,15 @@ import { Metadata } from "./types";
 
 interface BlockchainState {
   blockchain: Blockchain;
-  folderHandle: FileSystemDirectoryHandle | null;
+  // folderHandle: FileSystemDirectoryHandle | null;
   addBlock: (data: Metadata) => Promise<void>;
   updateChain: (chain: Block[]) => void;
-  setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
+  // setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
 }
 
 const useStore = create<BlockchainState>((set) => ({
-  blockchain: new Blockchain([]),  // Empty chain
-  folderHandle: null,
+  blockchain: new Blockchain(),
+  // folderHandle: null,
   
   addBlock: async (data) => {
     const { blockchain } = useStore.getState();
@@ -28,9 +28,9 @@ const useStore = create<BlockchainState>((set) => ({
 
     if (!response.ok) throw new Error("Failed to sync with backend");
   },
+  // setFolderHandle: (handle) => set({ folderHandle: handle }),
 
   updateChain: (chain) => set({ blockchain: new Blockchain(chain) }),
-  setFolderHandle: (handle) => set({ folderHandle: handle }),
 }));
 
 export default useStore;
