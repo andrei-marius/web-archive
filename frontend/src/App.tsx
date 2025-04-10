@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { init, send, sendRequest } from "./network";
+import { init, send, sendRequest, suggestBlock } from "./network";
 import useStore from "./store";
 
 const App: React.FC = () => {
@@ -50,10 +50,13 @@ const App: React.FC = () => {
         });
   
         const data = await response.json();
-  
-        
-  
+         
         if (data.success) {
+          console.log(data);
+           // send(data.metadata);
+          suggestBlock(data.metadata)
+          setUrl("");
+        
           console.log("Scraped metadata:", data.metadata);
           send(data.metadata);
   
@@ -69,7 +72,6 @@ const App: React.FC = () => {
             }),
           });
   
-          setUrl(""); 
         } else {
           console.error("Error scraping page:", data.error);
         }

@@ -7,6 +7,7 @@ import { Block, Blockchain } from "./blockchain.js";
 
 const app = express();
 const server = createServer(app);
+
 app.use(cors());
 app.use(express.json());
 
@@ -124,8 +125,10 @@ io.on("connection", (socket) => {
 
     io.emit("connectedPeers", connectedPeers);
   });
-});
 
+
+
+});
 server.listen(3000, () => {
   console.log("Server running at http://localhost:3000");
 });
