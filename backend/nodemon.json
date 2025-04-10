@@ -1,3 +1,6 @@
 {
-    "ignore": ["scraped_data/**"]
-  }
+  "ignore": [
+    "scraped_data/**",
+    "backend/blockchain.json"
+  ]
+}
