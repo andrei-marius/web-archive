@@ -107,24 +107,24 @@ const App: React.FC = () => {
     return results;
   }
 
-  async function logAllFiles() {
-    try {
-      const files = await readAllFilesFromOPFS();
-      console.log('All files in OPFS:', files);
+  // async function logAllFiles() {
+  //   try {
+  //     const files = await readAllFilesFromOPFS();
+  //     console.log('All files in OPFS:', files);
       
-      files.forEach(file => {
-        if (typeof file.content === 'string') {
-          console.log(`Text file ${file.path}: ${file.content.length} chars`);
-        } else if (file.content instanceof ArrayBuffer) {
-          console.log(`Binary file ${file.path}: ${file.content.byteLength} bytes`);
-        }
-      });
-    } catch (error) {
-      console.error('Error reading files:', error);
-    }
-  }
+  //     files.forEach(file => {
+  //       if (typeof file.content === 'string') {
+  //         console.log(`Text file ${file.path}: ${file.content.length} chars`);
+  //       } else if (file.content instanceof ArrayBuffer) {
+  //         console.log(`Binary file ${file.path}: ${file.content.byteLength} bytes`);
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('Error reading files:', error);
+  //   }
+  // }
 
-  logAllFiles();
+  // logAllFiles();
 
   const save = async () => {
     if (!preview) return;
@@ -259,17 +259,17 @@ const App: React.FC = () => {
           console.log("Scraped metadata:", data.metadata);
           send(data.metadata);
   
-          const latestBlock = useStore.getState().blockchain.getLatestBlock();
+          // const latestBlock = useStore.getState().blockchain.getLatestBlock();
   
-          // Get stuff for backend
-          await fetch("http://localhost:3000/blockchain", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              metadata: latestBlock.data,
-              hash: latestBlock.hash,
-            }),
-          });
+          // // Get stuff for backend
+          // await fetch("http://localhost:3000/blockchain", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify({
+          //     metadata: latestBlock.data,
+          //     hash: latestBlock.hash,
+          //   }),
+          // });
   
         } else {
           console.error("Error scraping page:", data.error);
@@ -530,84 +530,76 @@ const App: React.FC = () => {
                 </div>
               );
             })}
+
+            {/* <div>
+              <input
+                type="text"
+                placeholder="Search by keyword"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+              <button onClick={searchByKeyword}>SEARCH</button>
+            </div> */}
+
+            {/* <div>
+              {filteredBlocks.length > 0 ? (
+                filteredBlocks.map((block, index) => (
+                  <div key={index}>
+                    <div>Block {index}</div>
+                    <div>Timestamp: {block.timestamp}</div>
+                    <div>PreviousHash: {block.previousHash}</div>
+                    <div>Hash: {block.hash}</div>
+                    <div>Data:</div>
+                    {typeof block.data !== "string" ? (
+                      <div>
+                        <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
+                        <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
+                        <div>Desc: {block.data.description}</div>
+                        <div>Timestamp: {block.data.timestamp}</div>
+                        <div>SS: {block.data.screenshot}</div>
+                        <div>MHTML file: {block.data.mhtmlFile}</div>
+                        <div>Keywords: {block.data.keywords}</div>
+                        <button onClick={sendRequest}>download mhtml file</button>
+                      </div>
+                    ) : (
+                      <div>{block.data}</div>
+                    )}
+                    <br />
+                  </div>
+                ))
+              ) : (
+                blockchain.map((block, index) => (
+                  <div key={index}>
+                    <div>Block {index}</div>
+                    <div>Timestamp: {block.timestamp}</div>
+                    <div>PreviousHash: {block.previousHash}</div>
+                    <div>Hash: {block.hash}</div>
+                    <div>Data:</div>
+                    {typeof block.data !== "string" ? (
+                      <div>
+                        <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
+                        <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
+                        <div>Desc: {block.data.description}</div>
+                        <div>Timestamp: {block.data.timestamp}</div>
+                        <div>SS: {block.data.screenshot}</div>
+                        <div>MHTML file: {block.data.mhtmlFile}</div>
+                        <div>Keywords: {block.data.keywords}</div>
+                        <button onClick={sendRequest}>download mhtml file</button>
+                      </div>
+                    ) : (
+                      <div>{block.data}</div>
+                    )}
+                    <br />
+                  </div>
+                ))
+              )}
+            </div> */}
+
           </TabsContent>
         </Tabs>
+
       </main>
-      <input
-        onChange={(e) => setUrl(e.target.value)}
-        value={url}
-        type="text"
-        placeholder="URL"
-      />
-      <button onClick={sendData}>UPLOAD</button>
 
-      <button onClick={requestFolderAccess}>SELECT FOLDER</button>
-
-      <button onClick={listFiles}>LIST FILES</button>
-
-      <div>
-        <input
-          type="text"
-          placeholder="Search by keyword"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <button onClick={searchByKeyword}>SEARCH</button>
-      </div>
-
-      <div>
-        {filteredBlocks.length > 0 ? (
-          filteredBlocks.map((block, index) => (
-            <div key={index}>
-              <div>Block {index}</div>
-              <div>Timestamp: {block.timestamp}</div>
-              <div>PreviousHash: {block.previousHash}</div>
-              <div>Hash: {block.hash}</div>
-              <div>Data:</div>
-              {typeof block.data !== "string" ? (
-                <div>
-                  <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
-                  <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
-                  <div>Desc: {block.data.description}</div>
-                  <div>Timestamp: {block.data.timestamp}</div>
-                  <div>SS: {block.data.screenshot}</div>
-                  <div>MHTML file: {block.data.mhtmlFile}</div>
-                  <div>Keywords: {block.data.keywords}</div>
-                  <button onClick={sendRequest}>download mhtml file</button>
-                </div>
-              ) : (
-                <div>{block.data}</div>
-              )}
-              <br />
-            </div>
-          ))
-        ) : (
-          blockchain.map((block, index) => (
-            <div key={index}>
-              <div>Block {index}</div>
-              <div>Timestamp: {block.timestamp}</div>
-              <div>PreviousHash: {block.previousHash}</div>
-              <div>Hash: {block.hash}</div>
-              <div>Data:</div>
-              {typeof block.data !== "string" ? (
-                <div>
-                  <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
-                  <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
-                  <div>Desc: {block.data.description}</div>
-                  <div>Timestamp: {block.data.timestamp}</div>
-                  <div>SS: {block.data.screenshot}</div>
-                  <div>MHTML file: {block.data.mhtmlFile}</div>
-                  <div>Keywords: {block.data.keywords}</div>
-                  <button onClick={sendRequest}>download mhtml file</button>
-                </div>
-              ) : (
-                <div>{block.data}</div>
-              )}
-              <br />
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 };
