@@ -1,0 +1,42 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "timestamp": 1743677111364,
+      "data": "Genesis Block",
+      "previousHash": "",
+      "hash": "380d73f8aacaa4e5fb8ff4e04d547a76eadf831f423eaaaabd7a73e3e18f4b2a"
+    },
+    {
+      "index": 1,
+      "timestamp": 1743677127512,
+      "data": {
+        "url": "http://localhost:5173/",
+        "title": "Vite + React + TS",
+        "description": "No description",
+        "keywords": "No keywords",
+        "timestamp": "2025-04-03T10:45:27.253Z",
+        "screenshot": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\screenshot.png",
+        "mhtmlFile": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\page.mhtml"
+      },
+      "previousHash": "380d73f8aacaa4e5fb8ff4e04d547a76eadf831f423eaaaabd7a73e3e18f4b2a",
+      "hash": "fb5f3144e469110b8cdccc4c0b4bae22fffd7791a8a69cd0d8c0d8b0e7a8443d"
+    },
+    {
+      "index": 2,
+      "timestamp": 1743677141006,
+      "data": {
+        "url": "https://chat.deepseek.com/a/chat/s/6bd0249e-8eee-4e7c-983d-daa71340bc5f",
+        "title": "Just a moment...",
+        "description": "No description",
+        "keywords": "No keywords",
+        "timestamp": "2025-04-03T10:45:40.692Z",
+        "screenshot": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\screenshot.png",
+        "mhtmlFile": "C:\\Users\\Oli\\Desktop\\BlockChain ReTake\\web-archive\\backend\\scraped_data\\page.mhtml"
+      },
+      "previousHash": "fb5f3144e469110b8cdccc4c0b4bae22fffd7791a8a69cd0d8c0d8b0e7a8443d",
+      "hash": "9ee5446489f3a342279c5903115180ad6a98d9d2325289dcba4eb2f55b4ee291"
+    }
+  ],
+  "keywordIndex": {}
+}

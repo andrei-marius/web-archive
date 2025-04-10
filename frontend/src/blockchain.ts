@@ -11,13 +11,14 @@ export class Block {
     index: number,
     timestamp: number,
     data: Metadata | string,
-    previousHash: string = ""
+    previousHash: string = "",
+    hash?: string
   ) {
     this.index = index;
     this.timestamp = timestamp;
     this.data = data;
     this.previousHash = previousHash;
-    this.hash = "";
+    this.hash = hash || "";
   }
 
   async calculateHash(): Promise<void> {
@@ -34,27 +35,40 @@ export class Blockchain {
   public chain: Block[];
 
   constructor(chain?: Block[]) {
-    this.chain = chain || []
-      // ? chain.map(
-      //     (block) =>
-      //       new Block(
-      //         block.index,
-      //         block.timestamp,
-      //         block.data,
-      //         block.previousHash
-      //       )
-      //   )
-      // : [];
+    this.chain = chain
+       ? chain.map(
+           (block) =>
+             new Block(
+               block.index,
+               block.timestamp,
+               block.data,
+               block.previousHash,
+               block.hash
+             )
+         )
+       : [];
+    }
+
+  async addBlock(newBlock: Block): Promise<void> {
+    
+    if (this.chain.length === 0) {
+      
+      newBlock.previousHash = "";
+    } else {
+      
+      newBlock.previousHash = this.getLatestBlock().hash;
+    }
+  
+    
+    await newBlock.calculateHash();
+  
+    
+    this.chain = [...this.chain, newBlock];
   }
+  
 
   getLatestBlock(): Block {
     return this.chain[this.chain.length - 1];
-  }
-
-  async addBlock(newBlock: Block): Promise<void> {
-    newBlock.previousHash = this.getLatestBlock().hash;
-    await newBlock.calculateHash();
-    this.chain = [...this.chain, newBlock];
   }
 
   async isChainValid(): Promise<boolean> {
@@ -86,20 +100,4 @@ async function calculateHash(data: string): Promise<string> {
   return hashHex;
 }
 
-// // Example usage
-// (async () => {
-//   const myBlockchain = new Blockchain();
 
-//   // Add some blocks
-//   const block1 = new Block(1, Date.now(), { amount: 10 });
-//   await myBlockchain.addBlock(block1);
-
-//   const block2 = new Block(2, Date.now(), { amount: 20 });
-//   await myBlockchain.addBlock(block2);
-
-//   // Print the blockchain
-//   console.log(JSON.stringify(myBlockchain, null, 2));
-
-//   // Validate the blockchain
-//   console.log("Is blockchain valid?", await myBlockchain.isChainValid());
-// })();

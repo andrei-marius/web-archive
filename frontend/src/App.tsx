@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { init, send, sendRequest } from "./network";
+import { init, send, sendRequest, suggestBlock } from "./network";
 import useStore from "./store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ const App: React.FC = () => {
   const [preview, setPreview] = useState<Metadata | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [keyword, setKeyword] = useState<string>("");
+  const [filteredBlocks, setFilteredBlocks] = useState<any[]>([]);
   const blockchain = useStore((state) => state.blockchain.chain);
   // const folderHandle = useStore((state) => state.folderHandle);
   // const setFolderHandle = useStore((state) => state.setFolderHandle);
@@ -234,9 +236,9 @@ const App: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
-
+  
         const data = await response.json();
-
+         
         if (data.success) {
           const { metadata } = data;
 
@@ -249,7 +251,26 @@ const App: React.FC = () => {
 
           setPreview(metadataWithoutPaths);
 
+          console.log(data);
+           // send(data.metadata);
+          suggestBlock(data.metadata)
           setUrl("");
+        
+          console.log("Scraped metadata:", data.metadata);
+          send(data.metadata);
+  
+          const latestBlock = useStore.getState().blockchain.getLatestBlock();
+  
+          // Get stuff for backend
+          await fetch("http://localhost:3000/blockchain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              metadata: latestBlock.data,
+              hash: latestBlock.hash,
+            }),
+          });
+  
         } else {
           console.error("Error scraping page:", data.error);
         }
@@ -264,6 +285,29 @@ const App: React.FC = () => {
   const handleDownloadMHTML = (event: React.MouseEvent, id: string) => {
     event.stopPropagation(); // Prevent the click event from propagating to the card
     sendRequest(id);
+  };
+  
+
+  const searchByKeyword = async () => {
+    if (keyword.trim()) {
+      try {
+        const response = await fetch("http://localhost:3000/search", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keyword }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setFilteredBlocks(data.filteredBlocks);
+        } else {
+          console.error("Error searching blocks:", data.error);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
   };
 
   return (
@@ -489,6 +533,81 @@ const App: React.FC = () => {
           </TabsContent>
         </Tabs>
       </main>
+      <input
+        onChange={(e) => setUrl(e.target.value)}
+        value={url}
+        type="text"
+        placeholder="URL"
+      />
+      <button onClick={sendData}>UPLOAD</button>
+
+      <button onClick={requestFolderAccess}>SELECT FOLDER</button>
+
+      <button onClick={listFiles}>LIST FILES</button>
+
+      <div>
+        <input
+          type="text"
+          placeholder="Search by keyword"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        <button onClick={searchByKeyword}>SEARCH</button>
+      </div>
+
+      <div>
+        {filteredBlocks.length > 0 ? (
+          filteredBlocks.map((block, index) => (
+            <div key={index}>
+              <div>Block {index}</div>
+              <div>Timestamp: {block.timestamp}</div>
+              <div>PreviousHash: {block.previousHash}</div>
+              <div>Hash: {block.hash}</div>
+              <div>Data:</div>
+              {typeof block.data !== "string" ? (
+                <div>
+                  <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
+                  <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
+                  <div>Desc: {block.data.description}</div>
+                  <div>Timestamp: {block.data.timestamp}</div>
+                  <div>SS: {block.data.screenshot}</div>
+                  <div>MHTML file: {block.data.mhtmlFile}</div>
+                  <div>Keywords: {block.data.keywords}</div>
+                  <button onClick={sendRequest}>download mhtml file</button>
+                </div>
+              ) : (
+                <div>{block.data}</div>
+              )}
+              <br />
+            </div>
+          ))
+        ) : (
+          blockchain.map((block, index) => (
+            <div key={index}>
+              <div>Block {index}</div>
+              <div>Timestamp: {block.timestamp}</div>
+              <div>PreviousHash: {block.previousHash}</div>
+              <div>Hash: {block.hash}</div>
+              <div>Data:</div>
+              {typeof block.data !== "string" ? (
+                <div>
+                  <div style={{ wordBreak: "break-all" }}>URL: {block.data.url}</div>
+                  <div style={{ wordBreak: "break-all" }}>Title: {block.data.title}</div>
+                  <div>Desc: {block.data.description}</div>
+                  <div>Timestamp: {block.data.timestamp}</div>
+                  <div>SS: {block.data.screenshot}</div>
+                  <div>MHTML file: {block.data.mhtmlFile}</div>
+                  <div>Keywords: {block.data.keywords}</div>
+                  <button onClick={sendRequest}>download mhtml file</button>
+                </div>
+              ) : (
+                <div>{block.data}</div>
+              )}
+              <br />
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

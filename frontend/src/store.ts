@@ -13,17 +13,24 @@ interface BlockchainState {
 const useStore = create<BlockchainState>((set) => ({
   blockchain: new Blockchain(),
   // folderHandle: null,
+  
   addBlock: async (data) => {
     const { blockchain } = useStore.getState();
-    const newBlock = new Block(blockchain!.chain.length, Date.now(), data);
-    await blockchain!.addBlock(newBlock);
-    set({ blockchain });
-  },
-  updateChain: (chain) => {
-    const newBlockchain = new Blockchain(chain);
-    set({ blockchain: newBlockchain });
+    const newBlock = new Block(blockchain.chain.length, Date.now(), data);
+    await blockchain.addBlock(newBlock);
+    
+    // Send the ENTIRE updated chain to the backend
+    const response = await fetch("http://localhost:3000/blockchain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chain: blockchain.chain }),  // Send full chain
+    });
+
+    if (!response.ok) throw new Error("Failed to sync with backend");
   },
   // setFolderHandle: (handle) => set({ folderHandle: handle }),
+
+  updateChain: (chain) => set({ blockchain: new Blockchain(chain) }),
 }));
 
 export default useStore;
