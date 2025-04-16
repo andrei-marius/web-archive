@@ -36,36 +36,30 @@ export class Blockchain {
 
   constructor(chain?: Block[]) {
     this.chain = chain
-       ? chain.map(
-           (block) =>
-             new Block(
-               block.index,
-               block.timestamp,
-               block.data,
-               block.previousHash,
-               block.hash
-             )
-         )
-       : [];
-    }
+      ? chain.map(
+          (block) =>
+            new Block(
+              block.index,
+              block.timestamp,
+              block.data,
+              block.previousHash,
+              block.hash
+            )
+        )
+      : [];
+  }
 
   async addBlock(newBlock: Block): Promise<void> {
-    
     if (this.chain.length === 0) {
-      
       newBlock.previousHash = "";
     } else {
-      
       newBlock.previousHash = this.getLatestBlock().hash;
     }
-  
-    
+
     await newBlock.calculateHash();
-  
-    
+
     this.chain = [...this.chain, newBlock];
   }
-  
 
   getLatestBlock(): Block {
     return this.chain[this.chain.length - 1];
@@ -99,5 +93,3 @@ async function calculateHash(data: string): Promise<string> {
     .join("");
   return hashHex;
 }
-
-

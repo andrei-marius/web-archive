@@ -9,3 +9,12 @@ http://localhost:3000/keyword-index -- Full Look at all Keywords assosiated with
 
 
 http://localhost:3000/search?keyword=yourKeyWordHere -- Specific keyword lookup (with title lookup as fallback), this will give you other keywords assosiated with the block, along with block Index
+
+
+node version: 22.14.0
+
+npm i
+
+backend: npm start
+
+frontend: npm run dev
