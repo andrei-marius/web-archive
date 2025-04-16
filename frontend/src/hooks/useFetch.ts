@@ -1,4 +1,3 @@
-// hooks/useFetch.ts
 import { useState, useCallback } from 'react';
 
 type FetchOptions = {

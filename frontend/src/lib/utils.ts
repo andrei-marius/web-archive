@@ -36,7 +36,7 @@ export async function suggestBlock(data: Metadata) {
     // socket.emit("VOTE_BLOCK_YES", tempChain);
   } else {
     console.error("Blockchain addition rejected due to hash missmatch");
-    socket.emit("VOTE_BLOCK_NO", tempChain);
+    // socket.emit("VOTE_BLOCK_NO", tempChain);
   }
   for (const conn of connections) {
     if (conn.open) {

@@ -275,7 +275,7 @@ async function handleIncomingData(
     const { id, type } = data;
 
     if (type === "request") {
-      const arrayBuffer = await readFile(`page_${id}.mhtml`);
+      const arrayBuffer = await readFileFromOPFS(`page_${id}.mhtml`);
       connection.send({ type: "mhtml_file", mhtmlFile: arrayBuffer, id });
       console.log("file sent");
     }
@@ -342,7 +342,8 @@ const handleFileData = async (
     }
   };
 
-  const saveToLocal = async (): Promise<boolean> => {
+  // for saving a single file locally
+  const saveLocally = async (): Promise<boolean> => {
     try {
       const blob = new Blob([fileData], { type: "multipart/related" });
 
@@ -387,7 +388,7 @@ const handleFileData = async (
 
   const [opfsResult, localResult] = await Promise.allSettled([
     saveToOpfs(),
-    saveToLocal(),
+    saveLocally(),
   ]);
 
   if (opfsResult.status === "rejected" || localResult.status === "rejected") {
@@ -395,7 +396,7 @@ const handleFileData = async (
   }
 };
 
-const readFile = async (filename: string): Promise<ArrayBuffer | undefined> => {
+const readFileFromOPFS = async (filename: string): Promise<ArrayBuffer | undefined> => {
   try {
     const root = await navigator.storage.getDirectory();
 
