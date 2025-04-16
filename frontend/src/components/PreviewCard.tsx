@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Metadata } from "../lib/types";
-import { handleMetadata } from "@/lib/utils";
+// import { handleMetadata } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { saveFiles } from "@/lib/utils";
+import { suggestBlock } from "@/lib/utils";
 
 type PreviewCardProps = {
   preview: Metadata;
@@ -46,7 +47,8 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
       setSaveAndUploadLoading(true);
       try {
         await saveFiles(preview);
-        handleMetadata(preview);
+        // handleMetadata(preview);
+        suggestBlock(preview)
       } catch (error) {
         console.error("Error during save and upload:", error);
       } finally {
@@ -105,6 +107,7 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
             className="cursor-pointer mr-5"
             variant="outline"
             onClick={handleSave}
+            disabled={saveLoading || saveAndUploadLoading}
           >
             {saveLoading ? <Loader2 className="animate-spin" /> : "Save"}
           </Button>
@@ -112,6 +115,7 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
             className="cursor-pointer"
             variant="default"
             onClick={handleSaveAndUpload}
+            disabled={saveLoading || saveAndUploadLoading}
           >
             {saveAndUploadLoading ? (
               <Loader2 className="animate-spin" />

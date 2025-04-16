@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { Metadata } from "./types";
-import { suggestBlock } from "@/lib/utils";
+// import { suggestBlock } from "@/lib/utils";
 import { useFetch } from "@/hooks/useFetch";
 
 export function getPreview() {
@@ -23,7 +23,7 @@ export function getPreview() {
         ...result.data.metadata,
       };
 
-      suggestBlock(metadataWithoutPaths);
+      // suggestBlock(metadataWithoutPaths);
       return { success: true, metadata: metadataWithoutPaths };
     }
 
