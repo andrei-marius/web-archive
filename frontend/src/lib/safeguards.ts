@@ -5,7 +5,7 @@ import {
   SuggestedBlock,
   BlockchainMessage,
   Metadata,
-} from "./types";
+} from "./types/types";
 
 function isBlockchainMessage(data: unknown): data is BlockchainMessage {
   return (

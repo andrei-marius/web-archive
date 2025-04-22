@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { Metadata } from "./types";
+import { Metadata } from "./types/types";
 // import { suggestBlock } from "@/lib/utils";
 import { useFetch } from "@/hooks/useFetch";
 

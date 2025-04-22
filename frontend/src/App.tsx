@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavBar } from "./components/NavBar";
 import { Tabs } from "./components/Tabs";
 import "./lib/network";

@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Metadata, OPFSFile } from "@/lib/types";
+import { Metadata, OPFSFile } from "@/lib/types/types";
 import JSZip from "jszip";
 import useStore from "./store";
 import pako from "pako";
@@ -48,15 +48,29 @@ export async function suggestBlock(data: Metadata) {
   }
 }
 
+function dataURLToUint8Array(dataURL: any) {
+  const base64String = dataURL.split(',')[1];
+
+  const binaryString = atob(base64String);
+
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return bytes;
+}
+
+
 export function handleMetadata(data: Metadata) {
-  const values = Object.values(data.screenshotBuffer);
-  const uint8Array = new Uint8Array(values);
-  const compressedMhtml = pako.deflate(data.mhtmlContent);
+  const uint8Array = dataURLToUint8Array(data.screenshot);
+  const compressedMhtml = pako.deflate(data.mhtml);
 
   const processedData: Metadata = {
     ...data,
-    screenshotBuffer: uint8Array,
-    mhtmlContent: compressedMhtml,
+    screenshot: uint8Array,
+    mhtml: compressedMhtml,
   };
 
   const connections = useStore.getState().connections;
@@ -94,9 +108,7 @@ export function sendDownloadRequest(id: string) {
 // for saving multiple files locally
 export async function saveFiles(preview: Metadata): Promise<void> {
   try {
-    const screenshotArray = new Uint8Array(
-      Object.values(preview.screenshotBuffer)
-    );
+    const screenshotArray = dataURLToUint8Array(preview.screenshot);
     const metadataJson = JSON.stringify(preview, null, 2);
     const files = [
       {
@@ -106,7 +118,7 @@ export async function saveFiles(preview: Metadata): Promise<void> {
       },
       {
         name: `page_${preview.id}.mhtml`,
-        data: preview.mhtmlContent,
+        data: preview.mhtml,
         type: "message/rfc822",
       },
       {

@@ -55,12 +55,12 @@ const BlockCard: React.FC<BlockCardProps> = ({
                 <div>
                   <b>Keywords:</b> {data.keywords}
                 </div>
-                <div className="w-full h-100 overflow-hidden my-10">
+                <div className="w-full mt-8 mb-10 overflow-hidden">
                   <img
                     className="w-full object-cover object-top"
                     src={URL.createObjectURL(
                       new Blob(
-                        [new Uint8Array(Object.values(data.screenshotBuffer))],
+                        [new Uint8Array(Object.values(data.screenshot))],
                         { type: "image/png" }
                       )
                     )}
