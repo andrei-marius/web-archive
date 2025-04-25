@@ -1,7 +1,7 @@
 import Peer, { DataConnection } from "peerjs";
 import { Block, Blockchain } from "./blockchain";
 import useStore from "./store";
-import { Metadata } from "./types";
+import { Metadata } from "./types/types";
 import pako from "pako";
 import _ from "lodash";
 import { setConnectedPeers } from "./connectedPeersStore";
@@ -26,84 +26,86 @@ import { handleMetadata, blockRequest, handlePrePrepare, handlePrepare, handleCo
 
   const { socket, connections } = useStore.getState();
 
-  socket.on("connect", () => {
-    console.log("socket id:", socket.id);
-
-    if (socket.id) {
-      peer = new Peer(socket.id);
-      console.log("peer id:", peer.id);
-      
-      peer.on("open", (peerId) => {
+  if (socket) {
+    socket.on("connect", () => {
+      console.log("socket id:", socket.id);
+  
+      if (socket.id) {
+        peer = new Peer(socket.id);
+        console.log("peer id:", peer.id);
+  
+        peer.on("open", (peerId) => {
           console.log("My peer ID is:", peerId);
-
-        if (connectedPeers.length > 0) {
-          for (const id of connectedPeers) {
-            const connection = peer.connect(id);
-
-            connection.on("open", () => {
-              console.log(peerId, "connected to:", id);
-              connections.push(connection);
-              connection.send("request_blockchain");
-
-              connection.on("data", async function (data: unknown) {
-                console.log("Received data:", data);
-
-                handleIncomingData(
-                  data,
-                  connection,
-                  connections,
-                  yesVotes,
-                  noVotes,
-                  connectedPeers
-                );
+  
+          if (connectedPeers.length > 0) {
+            for (const id of connectedPeers) {
+              const connection = peer.connect(id);
+  
+              connection.on("open", () => {
+                console.log(peerId, "connected to:", id);
+                connections.push(connection);
+                connection.send("request_blockchain");
+  
+                connection.on("data", async function (data: unknown) {
+                  console.log("Received data:", data);
+  
+                  handleIncomingData(
+                    data,
+                    connection,
+                    connections,
+                    yesVotes,
+                    noVotes,
+                    connectedPeers
+                  );
+                });
               });
-            });
+            }
+          } else {
+            console.log("no other peers");
           }
-        } else {
-          console.log("no other peers");
-        }
-
-        peer.on("connection", (conn) => {
-          console.log("received connection", conn);
-          connections.push(conn);
-
-          conn.on("data", async function (data: unknown) {
-            console.log("Received data:", data);
-
-            handleIncomingData(
-              data,
-              conn,
-              connections,
-              yesVotes,
-              noVotes,
-              connectedPeers
-            );
+  
+          peer.on("connection", (conn) => {
+            console.log("received connection", conn);
+            connections.push(conn);
+  
+            conn.on("data", async function (data: unknown) {
+              console.log("Received data:", data);
+  
+              handleIncomingData(
+                data,
+                conn,
+                connections,
+                yesVotes,
+                noVotes,
+                connectedPeers
+              );
+            });
           });
         });
-      });
-    }
-  });
-
+      }
+    });
+  
     socket.on("connectedPeers", (data) => {
         connectedPeers = data.filter((id: string) => id !== socket.id);
         setConnectedPeers(connectedPeers);
-        console.log("Peers set:", connectedPeers);
+      console.log(connectedPeers);
     });
-
-  socket.on("init_blockchain", (data) => {
-    console.log("Received blockchain from server:", data);
-    useStore.getState().updateChain(data);
-  });
-
-  socket.on("YES_VOTE", (data) => {
-    const tempChain: Blockchain = data;
-    console.log("Voting concluded, block added to chain");
-    useStore.getState().updateChain(tempChain.chain);
-  });
-
-  socket.on("NO_VOTE", () => {
-    console.log("Voting concluded, suggested block was rejected");
-  });
+  
+    socket.on("init_blockchain", (data) => {
+      console.log("Received blockchain from server:", data);
+      useStore.getState().updateChain(data);
+    });
+  
+    socket.on("YES_VOTE", (data) => {
+      const tempChain: Blockchain = data;
+      console.log("Voting concluded, block added to chain");
+      useStore.getState().updateChain(tempChain.chain);
+    });
+  
+    socket.on("NO_VOTE", () => {
+      console.log("Voting concluded, suggested block was rejected");
+    });
+  }
 })();
 
 async function handleIncomingData(
@@ -313,11 +315,12 @@ async function handleIncomingData(
   }
 
   if (isMetadata(data)) {
+    // TODO: function restoreData has to be updated
     // Restore the data before processing
-    const restoredData = restoreData(data);
+    // const restoredData = restoreData(data);
 
     // Process the restored data
-    console.log("Restored data:", restoredData);
+    // console.log("Restored data:", restoredData);
     // useStore.getState().addBlock(restoredData);
   }
 
@@ -440,32 +443,33 @@ const readFileFromOPFS = async (filename: string): Promise<ArrayBuffer | undefin
   }
 };
 
-function restoreData(data: Metadata): Metadata {
-  let screenshotBuffer: Uint8Array | Buffer;
+// TODO: has to be updated
+// function restoreData(data: Metadata): Metadata {
+//   let screenshotBuffer: Uint8Array | Buffer;
 
-  if (
-    data.screenshotBuffer instanceof Uint8Array ||
-    Buffer.isBuffer(data.screenshotBuffer)
-  ) {
-    screenshotBuffer = data.screenshotBuffer;
-  } else {
-    const values = Object.values(data.screenshotBuffer);
-    screenshotBuffer = new Uint8Array(values as number[]);
-  }
+//   if (
+//     data.screenshotBuffer instanceof Uint8Array ||
+//     Buffer.isBuffer(data.screenshotBuffer)
+//   ) {
+//     screenshotBuffer = data.screenshotBuffer;
+//   } else {
+//     const values = Object.values(data.screenshotBuffer);
+//     screenshotBuffer = new Uint8Array(values as number[]);
+//   }
 
-  let decompressedMhtml: string;
-  if (data.mhtmlContent instanceof Uint8Array) {
-    decompressedMhtml = pako.inflate(data.mhtmlContent, { to: "string" });
-  } else {
-    decompressedMhtml = data.mhtmlContent;
-  }
+//   let decompressedMhtml: string;
+//   if (data.mhtmlContent instanceof Uint8Array) {
+//     decompressedMhtml = pako.inflate(data.mhtmlContent, { to: "string" });
+//   } else {
+//     decompressedMhtml = data.mhtmlContent;
+//   }
 
-  return {
-    ...data,
-    screenshotBuffer,
-    mhtmlContent: decompressedMhtml,
-  };
-}
+//   return {
+//     ...data,
+//     screenshotBuffer,
+//     mhtmlContent: decompressedMhtml,
+//   };
+// }
 
 function sendVoteYes(data: Metadata) {
   const connections = useStore.getState().connections;

@@ -1,4 +1,4 @@
-import { Block, Blockchain } from "./blockchain";
+import { Block, Blockchain } from "../blockchain";
 
 type Metadata = {
   url: string;
@@ -6,11 +6,13 @@ type Metadata = {
   description: string;
   keywords: string;
   timestamp: string;
-  screenshotBuffer: Buffer | Uint8Array;
-  mhtmlContent: string | Uint8Array;
+  screenshot: Buffer | Uint8Array | any;
+  mhtml: string | Uint8Array | any;
   // screenshotPath: string;
   // mhtmlPath: string;
   id: string;
+  ogTitle: string;
+  ogDescription: string;
 };
 
 type BlockchainMessage = {

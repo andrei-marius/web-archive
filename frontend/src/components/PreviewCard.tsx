@@ -8,22 +8,24 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Metadata } from "../lib/types";
-// import { handleMetadata } from "@/lib/utils";
+import { Metadata } from "../lib/types/types";
+import { handleMetadata } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { saveFiles } from "@/lib/utils";
 import { suggestBlock } from "@/lib/utils";
 
 type PreviewCardProps = {
   preview: Metadata;
-  onCancel: () => void;
-  setPreview: React.Dispatch<React.SetStateAction<Metadata | null>>;
+  onCancel?: () => void;
+  setPreview?: React.Dispatch<React.SetStateAction<Metadata | null>>;
+  onSaveSuccess?: () => void;
 };
 
 const PreviewCard: React.FC<PreviewCardProps> = ({
   preview,
   onCancel,
   setPreview,
+  onSaveSuccess
 }) => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveAndUploadLoading, setSaveAndUploadLoading] = useState(false);
@@ -37,7 +39,12 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
         console.error("Error during saving files:", error);
       } finally {
         setSaveLoading(false);
-        setPreview(null);
+        if (setPreview) {
+          setPreview(null);
+        }
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        }
       }
     }
   };
@@ -53,7 +60,12 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
         console.error("Error during save and upload:", error);
       } finally {
         setSaveAndUploadLoading(false);
-        setPreview(null);
+        if (setPreview) {
+          setPreview(null);
+        }
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        }
       }
     }
   };
@@ -78,18 +90,16 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
           <div>
             <b>Keywords:</b> {preview.keywords}
           </div>
+          {/* <div>
+            <b>MHTML:</b> {preview.mhtml}
+          </div> */}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="w-full h-100 overflow-hidden">
+        <div className="w-full h-100 mb-2 overflow-hidden">
           <img
             className="w-full object-cover object-top"
-            src={URL.createObjectURL(
-              new Blob(
-                [new Uint8Array(Object.values(preview.screenshotBuffer))],
-                { type: "image/png" }
-              )
-            )}
+            src={preview.screenshot}
             alt="Screenshot"
           />
         </div>

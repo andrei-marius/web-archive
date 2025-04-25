@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Block, Blockchain } from "./blockchain";
-import { Metadata } from "./types";
+import { Metadata } from "./types/types";
 import { Socket } from "socket.io-client";
 import { DataConnection } from "peerjs";
 import io from "socket.io-client";
@@ -11,7 +11,7 @@ type AppState = {
   addBlock: (data: Metadata) => Promise<void>;
   updateChain: (chain: Block[]) => void;
   // setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
-  socket: Socket;
+  socket: Socket | null;
   connections: DataConnection[];
 
   PBFT: PBFTState;
@@ -39,7 +39,7 @@ type PBFTState = {
 const useStore = create<AppState>((set) => ({
   blockchain: new Blockchain(),
   // folderHandle: null,
-  socket: io("http://localhost:3000"),
+  socket: io('http://localhost:3000/'),
   connections: [],
 
   addBlock: async (data) => {

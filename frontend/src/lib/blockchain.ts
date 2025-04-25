@@ -1,4 +1,4 @@
-import { Metadata } from "./types";
+import { Metadata } from "./types/types";
 
 export class Block {
   public index: number;
