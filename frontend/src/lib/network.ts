@@ -4,15 +4,19 @@ import useStore from "./store";
 import { Metadata } from "./types";
 import pako from "pako";
 import _ from "lodash";
+import { setConnectedPeers } from "./connectedPeersStore";
 import {
   isMetadata,
   isMhtmlFile,
   isDownloadRequest,
   isVote,
   isBlockchainSuggestion,
-  isBlockchainMessage,
+    isBlockchainMessage,
+    isPrePrepareMessage,
+    isPrepareMessage,
+    isCommitMessage
 } from "./safeguards";
-import { handleMetadata } from "./utils";
+import { handleMetadata, blockRequest, handlePrePrepare, handlePrepare, handleCommit } from "./utils";
 
 (() => {
   let peer: Peer;
@@ -28,9 +32,9 @@ import { handleMetadata } from "./utils";
     if (socket.id) {
       peer = new Peer(socket.id);
       console.log("peer id:", peer.id);
-
+      
       peer.on("open", (peerId) => {
-        console.log("My peer ID is:", peerId);
+          console.log("My peer ID is:", peerId);
 
         if (connectedPeers.length > 0) {
           for (const id of connectedPeers) {
@@ -80,10 +84,11 @@ import { handleMetadata } from "./utils";
     }
   });
 
-  socket.on("connectedPeers", (data) => {
-    connectedPeers = data.filter((id: string) => id !== socket.id);
-    console.log(connectedPeers);
-  });
+    socket.on("connectedPeers", (data) => {
+        connectedPeers = data.filter((id: string) => id !== socket.id);
+        setConnectedPeers(connectedPeers);
+        console.log("Peers set:", connectedPeers);
+    });
 
   socket.on("init_blockchain", (data) => {
     console.log("Received blockchain from server:", data);
@@ -120,47 +125,60 @@ async function handleIncomingData(
   if (isBlockchainSuggestion(data)) {
     console.log("got suggestion");
     const { type, suggestedBlock } = data;
+      if (type === "BLOCK-REQUEST") {
 
-    if (type === "SUGGEST_BLOCK") {
-      // temp blockchain to check before updating the real one with a new block
+          blockRequest(suggestedBlock);
 
-      //const tempChain: Blockchain = useStore.getState().blockchain;
+      } else
+      if (type === "SUGGEST_BLOCK") {
+          // temp blockchain to check before updating the real one with a new block
 
-      // made a clone so as to not refence the same object un useStore
-      const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+          //const tempChain: Blockchain = useStore.getState().blockchain;
 
-      console.log(
-        "Before adding block (stringified so no object methods)::",
-        JSON.parse(JSON.stringify(tempChain))
-      );
+          // made a clone so as to not refence the same object un useStore
+          const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
 
-      // temp block containing proposed metadata
-      const tempBlock = new Block(
-        tempChain!.chain.length,
-        Date.now(),
-        suggestedBlock
-      );
+          console.log(
+              "Before adding block (stringified so no object methods)::",
+              JSON.parse(JSON.stringify(tempChain))
+          );
 
-      await tempChain!.addBlock(tempBlock);
-      console.log("added new block tempChain", tempChain);
-      // console.log("latest block", tempChain.getLatestBlock());
-      if ((await tempChain.isChainValid()) == true) {
-        // add more checks
-        console.log("chain has correct hash, shit worked");
+          // temp block containing proposed metadata
+          const tempBlock = new Block(
+              tempChain!.chain.length,
+              Date.now(),
+              suggestedBlock
+          );
 
-        // send response to server
+          await tempChain!.addBlock(tempBlock);
+          console.log("added new block tempChain", tempChain);
+          // console.log("latest block", tempChain.getLatestBlock());
+          if ((await tempChain.isChainValid()) == true) {
+              // add more checks
+              console.log("chain has correct hash, shit worked");
 
-        sendVoteYes(suggestedBlock);
-        // socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
-        return;
-      } else {
-        console.error("Blockchain addition rejected due to hash missmatch");
-        sendVoteNo();
-        //socket.emit("VOTE_BLOCK_NO", tempChain);
-        // send response to server io.emit("VOTE_BLOCK_NO")
-      }
-    }
-  }
+              // send response to server
+
+              sendVoteYes(suggestedBlock);
+              // socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
+              return;
+          } else {
+              console.error("Blockchain addition rejected due to hash missmatch");
+              sendVoteNo();
+              //socket.emit("VOTE_BLOCK_NO", tempChain);
+              // send response to server io.emit("VOTE_BLOCK_NO")
+          }
+      }  
+    } if (isPrePrepareMessage(data)) { 
+
+        handlePrePrepare(data);
+    } if (isPrepareMessage(data)) {
+
+        handlePrepare(data); 
+    } if (isCommitMessage(data)) {
+
+        handleCommit(data); 
+    } 
 
   if (isVote(data)) {
     const { type, newChain } = data;

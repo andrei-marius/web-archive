@@ -4,7 +4,10 @@ import {
   Vote,
   SuggestedBlock,
   BlockchainMessage,
-  Metadata,
+    Metadata,
+    PrePrepareMessage,
+    PrepareMessage,
+    CommitMessage,
 } from "./types";
 
 function isBlockchainMessage(data: unknown): data is BlockchainMessage {
@@ -23,6 +26,38 @@ function isBlockchainSuggestion(data: unknown): data is SuggestedBlock {
     "type" in data &&
     "suggestedBlock" in data
   );
+}
+
+function isPrePrepareMessage(data: unknown): data is PrePrepareMessage {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "suggestedBlock" in data &&
+        "view" in data &&
+        "sequence" in data
+    );
+}
+
+function isPrepareMessage(data: unknown): data is PrepareMessage {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "blockHash" in data &&
+        "view" in data &&
+        "sequence" in data
+    );
+}
+function isCommitMessage(data: unknown): data is CommitMessage {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "blockHash" in data &&
+        "view" in data &&
+        "sequence" in data
+    );
 }
 
 function isVote(data: unknown): data is Vote {
@@ -77,5 +112,8 @@ export {
   isDownloadRequest,
   isVote,
   isBlockchainSuggestion,
-  isBlockchainMessage,
+    isBlockchainMessage,
+    isPrePrepareMessage,
+    isPrepareMessage,
+    isCommitMessage,
 };

@@ -1,6 +1,12 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Metadata, OPFSFile } from "@/lib/types";
+import { getConnectedPeers } from "./connectedPeersStore";
+import {
+    Metadata,
+    PrePrepareMessage,
+    PrepareMessage,
+    CommitMessage,
+    OPFSFile } from "@/lib/types";
 import JSZip from "jszip";
 import useStore from "./store";
 import pako from "pako";
@@ -12,40 +18,47 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export async function suggestBlock(data: Metadata) {
-  const { socket, connections } = useStore.getState();
+    const { connections } = useStore.getState();
 
-  console.log("Sending data to connections:", connections);
-  const suggestedBlock = data;
-
-  const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
-
-  console.log(
-    "Before adding block (stringified so no object methods):",
-    JSON.parse(JSON.stringify(tempChain))
-  );
-
-  const tempBlock = new Block(
-    tempChain!.chain.length,
-    Date.now(),
-    suggestedBlock
-  );
-  await tempChain!.addBlock(tempBlock);
-  console.log("added new block tempChain", tempChain);
-  if ((await tempChain.isChainValid()) == true) {
-    console.log("chain has correct hash, shit worked");
-    // socket.emit("VOTE_BLOCK_YES", tempChain);
-  } else {
-    console.error("Blockchain addition rejected due to hash missmatch");
-    // socket.emit("VOTE_BLOCK_NO", tempChain);
-  }
-  for (const conn of connections) {
-    if (conn.open) {
-      conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
-      console.log("sent block for validation", suggestedBlock);
-    } else {
-      console.log("connection not open");
+    // find primary and send only to them
+    const suggestedBlock = data;
+    const msg = {
+        type: "BLOCK-REQUEST",
+        suggestedBlock: suggestedBlock
     }
-  }
+    const originalChain = useStore.getState().blockchain;
+    const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
+
+
+    console.log(
+        "Before adding block (stringified so no object methods):",
+        JSON.parse(JSON.stringify(tempChain))
+    );
+
+    const tempBlock = new Block(
+        tempChain!.chain.length,
+        Date.now(),
+        suggestedBlock
+    );
+
+    await tempChain!.addBlock(tempBlock);
+    console.log("added new block tempChain", tempChain);
+    if ((await tempChain.isChainValid()) == true) {
+        const randomPeer = connections[Math.floor(Math.random() * connections.length)];
+        console.log("chain has correct hash Sending data to random peer: ", randomPeer);
+        // use this to send: primaryId = peerList[view % peerList.length];
+        
+        if (randomPeer.open) {
+            console.log("About to send msg:", JSON.stringify(msg, null, 2));
+            randomPeer.send(msg);
+        } else {
+            console.log("try again, random peer closed");
+        }
+    } else {
+        console.error("Blockchain addition rejected due to hash missmatch");
+
+    }
+
 }
 
 export function handleMetadata(data: Metadata) {
@@ -193,6 +206,121 @@ async function saveToUserFolder(
     console.log("Files downloaded individually!");
     return false;
   }
+}
+
+
+export function sendToAll(msg) {
+    const {connections} = useStore.getState();
+    for (const conn of connections) {
+        if (conn.open) {
+            conn.send(msg);
+        }
+    }
+}
+
+export function blockRequest(data: Metadata) { 
+    // check that the receipiant is the primary
+    // if (PBFTstate.role !== 'primary') return;
+    //if (PBFTstate.log[sequence]) return;
+    const { PBFT } = useStore.getState();
+    const msg = {
+        type: 'PRE-PREPARE',
+        suggestedBlock: data,
+        view: PBFT.view,
+        sequence: ++PBFT.sequence,
+    };
+    const state = {
+        view: PBFT.view,
+        sequence: ++PBFT.sequence
+    }
+    useStore.getState().updatePBFT(state);
+   
+    //the papers log format (pre-prepare,v(view number),n(sequence number),d(message digest/hash))?p(Primary signed),m (request message)
+    const log = {
+        suggestedBlock: data
+    }
+
+    useStore.getState().appendToLog(PBFT.sequence, log);
+
+    sendToAll(msg);
+    // perhaps some response to the intitial client who made the suggestion
+}
+
+export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePrepareMessage) {
+    const { PBFT } = useStore.getState();
+    if (PBFT.log[sequence]) return;
+
+    const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+
+    const tempBlock = new Block(
+        tempChain!.chain.length,
+        Date.now(),
+        suggestedBlock
+    );
+    const blockHash = tempBlock.hash;
+    
+    await tempChain!.addBlock(tempBlock);
+    if ((await tempChain.isChainValid()) == true) {
+
+        const state = {
+            view: view,
+            sequence: sequence
+        }
+        useStore.getState().updatePBFT(state); 
+        // log should include these in order for the predicate "prepared" to be true
+          //: the request m
+          //a pre - prepare for m in view v with sequence number n
+          //,and 2f prepares from different backups that match
+          //the pre - prepare.
+        const log = {
+            suggestedBlock: suggestedBlock,
+            block: tempBlock,
+        }
+
+        useStore.getState().appendToLog(sequence,log);
+        const prepareMsg = { type: 'PREPARE', sequence: sequence, view: view, blockHash:blockHash };
+      
+    sendToAll(prepareMsg);
+       
+    } else {
+        console.error("Blockchain addition rejected due to hash missmatch");
+        // resend logic or something
+    }
+
+    
+}
+
+export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
+    const { PBFT } = useStore.getState();
+    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
+    PBFT.log[sequence].prepares.push("received");
+    const commitMsg = { type: 'COMMIT', sequence: sequence, view: view, blockHash: blockHash };
+    const peers = getConnectedPeers();
+    // verify two thirds majority prepares
+    const quorum = Math.floor((2 * peers.length) / 3);
+    if (PBFT.log[sequence].prepares.length >= quorum) {
+        
+        console.log("2f prepared");
+        sendToAll(commitMsg);
+    }
+
+    
+}
+
+export function handleCommit({ sequence, blockHash, view /*senderId*/ }: CommitMessage) {
+    const { PBFT } = useStore.getState();
+    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
+    PBFT.log[sequence].commits.push("received");
+    const peers = getConnectedPeers();
+    const quorum = Math.floor((2 * peers.length) / 3);
+    if (PBFT.log[sequence].prepares.length >= quorum) {
+        const suggestedBlock = PBFT.log[sequence].suggestedBlock
+        useStore.getState().addBlock(suggestedBlock);
+        console.log("2f committed");
+    }
+    
+    // send reply?
+    
 }
 
 /** FOR TESTING

@@ -13,6 +13,27 @@ type AppState = {
   // setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
   socket: Socket;
   connections: DataConnection[];
+
+  PBFT: PBFTState;
+  updatePBFT: (newPartial: Partial<PBFTState>) => void;
+  appendToLog: (
+    sequence: number,
+    entry: Partial<PBFTLogEntry>
+  ) => void;
+};
+
+type PBFTLogEntry = {
+    suggestedBlock: Metadata;
+    block: Block;
+    prepares: string[]; // peerIds that sent PREPARE
+    commits: string[];  // peerIds that sent COMMIT
+};
+
+type PBFTState = {
+    role: "primary" | "replica";
+    sequence: number;
+    view: number;
+    log: Record<number, PBFTLogEntry>;
 };
 
 const useStore = create<AppState>((set) => ({
@@ -40,6 +61,32 @@ const useStore = create<AppState>((set) => ({
   updateChain: (chain) => set({ blockchain: new Blockchain(chain) }),
   updateConnections: (newConnections: DataConnection[]) =>
     set({ connections: newConnections }),
+
+    PBFT: {
+        role: "replica",
+        sequence: 0,
+        view: 0,
+        log: {},
+    },
+
+    updatePBFT: (newPartial) =>
+        set((state) => ({
+            PBFT: { ...state.PBFT, ...newPartial },
+        })),
+
+    appendToLog: (sequence, entry) =>
+        set((state) => ({
+            PBFT: {
+                ...state.PBFT,
+                log: {
+                    ...state.PBFT.log,
+                    [sequence]: {
+                        ...state.PBFT.log[sequence],
+                        ...entry,
+                    },
+                },
+            },
+        })),
 }));
 
 export default useStore;
