@@ -2,11 +2,11 @@ import Peer, { DataConnection } from "peerjs";
 import { Block, Blockchain } from "./blockchain";
 import useStore from "./store";
 import { Metadata } from "./types/types";
-import pako from "pako";
+// import pako from "pako";
 import _ from "lodash";
 import { setConnectedPeers } from "./connectedPeersStore";
 import {
-  isMetadata,
+  // isMetadata,
   isMhtmlFile,
   isDownloadRequest,
   isVote,
@@ -307,14 +307,13 @@ async function handleIncomingData(
     if (type === "mhtml_file") {
       console.log("received file");
       // Convert Uint8Array to ArrayBuffer if necessary
-      const arrayBuffer =
-        mhtmlFile instanceof Uint8Array ? mhtmlFile.buffer : mhtmlFile;
+      const arrayBuffer = mhtmlFile instanceof Uint8Array ? mhtmlFile.buffer : mhtmlFile;
       await handleFileData(`page_${id}.mhtml`, arrayBuffer);
       console.log("converted and downloaded file");
     }
   }
 
-  if (isMetadata(data)) {
+  // if (isMetadata(data)) {
     // TODO: function restoreData has to be updated
     // Restore the data before processing
     // const restoredData = restoreData(data);
@@ -322,7 +321,7 @@ async function handleIncomingData(
     // Process the restored data
     // console.log("Restored data:", restoredData);
     // useStore.getState().addBlock(restoredData);
-  }
+  // }
 
   // else {
   //   console.error("Received invalid data format:", data);
