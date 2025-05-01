@@ -33,12 +33,8 @@ export async function suggestBlock(data: Metadata) {
   console.log("added new block tempChain", tempChain);
   if ((await tempChain.isChainValid()) == true) {
     console.log("chain has correct hash, shit worked");
-    // socket.emit("VOTE_BLOCK_YES", tempChain);
-  } else {
-    console.error("Blockchain addition rejected due to hash missmatch");
-    // socket.emit("VOTE_BLOCK_NO", tempChain);
-  }
-  for (const conn of connections) {
+      // socket.emit("VOTE_BLOCK_YES", tempChain);
+      for (const conn of connections) {
     if (conn.open) {
       conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
       console.log("sent block for validation", suggestedBlock);
@@ -46,6 +42,11 @@ export async function suggestBlock(data: Metadata) {
       console.log("connection not open");
     }
   }
+  } else {
+    console.error("Blockchain addition rejected due to hash missmatch");
+    // socket.emit("VOTE_BLOCK_NO", tempChain);
+  }
+  
 }
 
 function dataURLToUint8Array(dataURL: any) {
@@ -80,10 +81,11 @@ export function handleMetadata(data: Metadata) {
     .addBlock(processedData)
     .then(() => {
       const blockchain = useStore.getState().blockchain.chain;
-
+      
       for (const conn of connections) {
-        if (conn.open) {
-          conn.send({ type: "NEW_BLOCKCHAIN", payload: blockchain });
+          if (conn.open) {
+              console.log("trying to send blockchain to: ", conn);
+          conn.send({ type: "NEW_BLOCKCHAIN", payload: blockchain});
           console.log("sent blockchain");
         } else {
           console.log("connection not open");

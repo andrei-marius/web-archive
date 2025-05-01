@@ -70,10 +70,11 @@ export class Blockchain {
       const currentBlock = this.chain[i];
       const previousBlock = this.chain[i - 1];
 
-      await currentBlock.calculateHash();
-      if (currentBlock.hash !== currentBlock.hash) {
-        return false;
-      }
+        const originalHash = currentBlock.hash;
+        await currentBlock.calculateHash();
+        if (currentBlock.hash !== originalHash) {
+            return false;
+        }
 
       if (currentBlock.previousHash !== previousBlock.hash) {
         return false;

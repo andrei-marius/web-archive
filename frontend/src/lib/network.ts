@@ -13,12 +13,13 @@ import {
   isBlockchainMessage,
 } from "./safeguards";
 import { handleMetadata } from "./utils";
+let yesVotes = 0;
+let noVotes = 0;
 
 (() => {
   let peer: Peer;
   let connectedPeers: string[] = [];
-  let yesVotes = 0;
-  let noVotes = 0;
+  
 
   const { socket, connections } = useStore.getState();
 
@@ -49,8 +50,6 @@ import { handleMetadata } from "./utils";
                     data,
                     connection,
                     connections,
-                    yesVotes,
-                    noVotes,
                     connectedPeers
                   );
                 });
@@ -71,8 +70,6 @@ import { handleMetadata } from "./utils";
                 data,
                 conn,
                 connections,
-                yesVotes,
-                noVotes,
                 connectedPeers
               );
             });
@@ -87,8 +84,8 @@ import { handleMetadata } from "./utils";
     });
   
     socket.on("init_blockchain", (data) => {
-      console.log("Received blockchain from server:", data);
-      useStore.getState().updateChain(data);
+        console.log("Received blockchain from server:", data);
+        useStore.getState().updateChain(data);
     });
   
     socket.on("YES_VOTE", (data) => {
@@ -107,15 +104,14 @@ async function handleIncomingData(
   data: unknown,
   connection: DataConnection,
   connections: DataConnection[],
-  yesVotes: number,
-  noVotes: number,
   connectedPeers: string[]
 ) {
   if (isBlockchainMessage(data)) {
     const { type, payload } = data;
 
     if (type === "NEW_BLOCKCHAIN") {
-      useStore.getState().updateChain(payload);
+        useStore.getState().updateChain(payload);
+        console.log("blockchain updated", useStore.getState().blockchain);
     }
   }
 
@@ -170,9 +166,10 @@ async function handleIncomingData(
     switch (type) {
       case "VOTE_BLOCK_YES":
         console.log("Received vote in the possitive:", data.type);
-        yesVotes = yesVotes + 1;
+        yesVotes++;
         console.log("yesVotes:", yesVotes);
-        if (yesVotes >= connectedPeers.length) {
+            if (yesVotes >= connectedPeers.length) {
+
           handleMetadata(newChain);
           /*
           for (const conn of connections) {
@@ -219,7 +216,7 @@ async function handleIncomingData(
         break;
       case "VOTE_BLOCK_NO":
         console.log("Received vote in the negative:", data.type);
-        noVotes = noVotes + 1;
+        noVotes++;
         if (noVotes > connectedPeers.length / 2) {
           for (const conn of connections) {
             if (conn.open) {
@@ -266,10 +263,13 @@ async function handleIncomingData(
     return;
   }
 
-  if (data === "request_blockchain") {
+    if (data === "request_blockchain") {
+        console.log("request from: ",connection)
+        const payload = useStore.getState().blockchain.chain
+        console.log("blockchain request is being handled")
     connection.send({
       type: "NEW_BLOCKCHAIN",
-      payload: useStore.getState().blockchain.chain,
+      payload: payload,
     });
   }
 
