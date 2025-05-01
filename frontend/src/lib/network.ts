@@ -132,7 +132,7 @@ async function handleMessage(
                 }
                 break;
             case "PRE-PREPARE":
-                await wait(300);
+                await wait(2000);
                 if (isPrePrepareMessage(message)) {
 
                     const msg = {
@@ -145,7 +145,7 @@ async function handleMessage(
                 }
                 break;
             case "PREPARE":
-                await wait(300);
+                await wait(2000);
                 if (isPrepareMessage(message)) {
                     console.log("received prepare");
                     const msg = {
@@ -185,12 +185,22 @@ async function handleMessage(
                         view: message.view,
                         blockHash: message.blockHash
                     } = message;
-                    const { PBFT } = useStore.getState();
-                    PBFT.log[message.sequence].commits.push("commited");
-                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    if (PBFT.log[message.sequence].commits.length >= quorum) {
 
-                        console.log("2f prepared");
+                    const entry: Partial<PBFTLogEntry> = {
+                        blockHash: message.blockHash,
+                        commits: ["commited"],
+                    }
+                    // ensures that two thirds majority has sent prepare
+                    useStore.getState().appendToLog(message.sequence, entry);
+                    const updatedPBFT = useStore.getState().PBFT;
+                    
+                    updatedPBFT.log[message.sequence].commits.push("commited");
+                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    console.log("log: ", updatedPBFT.log[message.sequence].commits);
+                    console.log("length: ", updatedPBFT.log[message.sequence].commits.length);
+                    if (updatedPBFT.log[message.sequence].commits.length >= quorum) {
+
+                        console.log("2f commited");
                         handleCommit(msg);
 
                     } else {

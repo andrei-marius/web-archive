@@ -328,7 +328,6 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
         suggestedBlock
     );
     const blockHash = tempBlock.hash;
-
     await tempChain!.addBlock(tempBlock);
     if ((await tempChain.isChainValid()) == true) {
 
@@ -345,6 +344,7 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
         const log = {
             suggestedBlock: suggestedBlock,
             block: tempBlock,
+            blockHash: blockHash
         }
 
         useStore.getState().appendToLog(sequence, log);
@@ -367,7 +367,7 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
 }
 
 export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
-    const { PBFT } = useStore.getState();
+    const PBFT = useStore.getState().PBFT;
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
     const commitMsg = {
         type: 'COMMIT',
