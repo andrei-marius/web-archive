@@ -140,14 +140,14 @@ async function handleMessage(
                         sequence: message.sequence,
                         view: message.view
                     } = message;
-
+                    console.log("sending pre-prepare");
                     handlePrePrepare(msg);
                 }
                 break;
             case "PREPARE":
                 await wait(300);
                 if (isPrepareMessage(message)) {
-
+                    console.log("received prepare");
                     const msg = {
                         sequence: message.sequence,
                         view: message.view,
@@ -162,15 +162,16 @@ async function handleMessage(
                     const updatedPBFT = useStore.getState().PBFT;
 
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    console.log("log: ", useStore.getState().PBFT.log[message.sequence].prepares);
-                    console.log("length: ", useStore.getState().PBFT.log[message.sequence].prepares.length);
+                    console.log(quorum)
+                    console.log("log: ", updatedPBFT.log[message.sequence].prepares);
+                    console.log("length: ", updatedPBFT.log[message.sequence].prepares.length);
                     if (updatedPBFT.log[message.sequence].prepares.length >= quorum) {
 
                         console.log("2f prepared");
                         handlePrepare(msg);
 
                     } else { 
-                        console.log("received prepare");
+                        console.log("not majority");
                     }
                     
                 }
