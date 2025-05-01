@@ -132,6 +132,7 @@ async function handleMessage(
                 }
                 break;
             case "PRE-PREPARE":
+                await wait(300);
                 if (isPrePrepareMessage(message)) {
 
                     const msg = {
@@ -144,6 +145,7 @@ async function handleMessage(
                 }
                 break;
             case "PREPARE":
+                await wait(300);
                 if (isPrepareMessage(message)) {
 
                     const msg = {
@@ -174,6 +176,7 @@ async function handleMessage(
                 }
                 break;
             case "COMMIT":
+                await wait(300);
                 if (isCommitMessage(message)) {
 
                     const msg = {
@@ -548,6 +551,10 @@ const readFileFromOPFS = async (filename: string): Promise<ArrayBuffer | undefin
     return undefined;
   }
 };
+
+function wait(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // TODO: has to be updated
 // function restoreData(data: Metadata): Metadata {
