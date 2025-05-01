@@ -38,13 +38,21 @@ export async function suggestBlock(data: Metadata) {
       for (const conn of connections) {
     if (conn.open) {
         conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
-        conn.send({ type: "VOTE_BLOCK_YES", newChain });
       console.log("sent block for validation", suggestedBlock);
     } else {
       console.log("connection not open");
     }
-  }
-  } else {
+        }
+        for (const conn of connections) {
+            if (conn.open) {
+                conn.send({ type: "VOTE_BLOCK_YES", newChain });
+                console.log("sent block for validation", suggestedBlock);
+            } else {
+                console.log("connection not open");
+            }
+        }
+    } else {
+        
     console.error("Blockchain addition rejected due to hash missmatch");
     // socket.emit("VOTE_BLOCK_NO", tempChain);
   }
