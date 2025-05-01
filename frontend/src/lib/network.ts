@@ -140,7 +140,7 @@ async function handleMessage(
                         sequence: message.sequence,
                         view: message.view
                     } = message;
-                    console.log("sending pre-prepare");
+                    console.log("sending prepare");
                     handlePrePrepare(msg);
                 }
                 break;
