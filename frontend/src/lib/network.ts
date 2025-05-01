@@ -1,7 +1,7 @@
 import Peer, { DataConnection } from "peerjs";
 import { Block, Blockchain } from "./blockchain";
 import useStore from "./store";
-import { Metadata } from "./types/types";
+import { Metadata, Message } from "./types/types";
 // import pako from "pako";
 import _ from "lodash";
 import {
@@ -10,9 +10,20 @@ import {
   isDownloadRequest,
   isVote,
   isBlockchainSuggestion,
-  isBlockchainMessage,
+    isBlockchainMessage,
+    isPrePrepareMessage,
+    isPrepareMessage,
+    isCommitMessage,
+    isMetadata,
 } from "./safeguards";
-import { handleMetadata, sendVoteYes } from "./utils";
+import {
+    handleMetadata,
+    sendVoteYes,
+    blockRequested,
+    handlePrePrepare,
+    handlePrepare,
+    handleCommit,
+} from "./utils";
 let yesVotes = 0;
 let noVotes = 0;
 
@@ -45,8 +56,9 @@ let noVotes = 0;
   
                 connection.on("data", async function (data: unknown) {
                   console.log("Received data:", data);
-  
-                  handleIncomingData(
+
+                    //handleIncomingData(
+                    handleMessage(
                     data,
                     connection,
                     connections,
@@ -66,7 +78,8 @@ let noVotes = 0;
             conn.on("data", async function (data: unknown) {
               console.log("Received data:", data);
   
-              handleIncomingData(
+              //handleIncomingData(
+                handleMessage(
                 data,
                 conn,
                 connections,
@@ -99,220 +112,320 @@ let noVotes = 0;
     //});
   }
 })();
-
-async function handleIncomingData(
-  data: unknown,
-  connection: DataConnection,
-  connections: DataConnection[],
-  connectedPeers: string[]
+async function handleMessage(
+    data: unknown,
+    connection: DataConnection,
+    connections: DataConnection[],
+    connectedPeers: string[]
 ) {
-  if (isBlockchainMessage(data)) {
-    const { type, payload } = data;
+    if (typeof data === "object" && data !== null && "type" in data) {
+        const message = data as Message;
 
-    if (type === "NEW_BLOCKCHAIN") {
-        useStore.getState().updateChain(payload);
-        console.log("blockchain updated", useStore.getState().blockchain);
-    }
-  }
+        switch (message.type) {
+            case "BLOCK-REQUEST":
+                if (isBlockchainSuggestion(message)) {
 
-  if (isBlockchainSuggestion(data)) {
-    console.log("got suggestion");
-    const { type, suggestedBlock } = data;
+                    const { suggestedBlock }  = message;
+                    
+                    blockRequested(suggestedBlock);
+                }
+                break;
+            case "PRE-PREPARE":
+                if (isPrePrepareMessage(message)) {
 
-    if (type === "SUGGEST_BLOCK") {
-      // temp blockchain to check before updating the real one with a new block
+                    const msg = {
+                        suggestedBlock: message.suggestedBlock,
+                        sequence: message.sequence,
+                        view: message.view
+                    } = message;
 
-      //const tempChain: Blockchain = useStore.getState().blockchain;
+                    handlePrePrepare(msg);
+                }
+                break;
+            case "PREPARE":
+                if (isPrepareMessage(message)) {
 
-      // made a clone so as to not refence the same object un useStore
-        const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
-      console.log(
-        "Before adding block (stringified so no object methods)::",
-        JSON.parse(JSON.stringify(tempChain))
-      );
+                    const msg = {
+                        sequence: message.sequence,
+                        view: message.view,
+                        blockHash: message.blockHash
+                    } = message;
+                    const { PBFT } = useStore.getState();
+                    PBFT.log[message.sequence].prepares.push("received");
+                    // ensures that two thirds majority has sent prepare
+                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    if (PBFT.log[message.sequence].prepares.length >= quorum) {
 
-      // temp block containing proposed metadata
-      const tempBlock = new Block(
-        tempChain!.chain.length,
-        Date.now(),
-        suggestedBlock
-      );
+                        console.log("2f prepared");
+                        handlePrepare(msg);
 
-      await tempChain!.addBlock(tempBlock);
-      console.log("added new block tempChain", tempChain);
-      // console.log("latest block", tempChain.getLatestBlock());
-      if ((await tempChain.isChainValid()) == true) {
-        // add more checks
-        console.log("chain has correct hash, shit worked");
+                    } else { 
+                        console.log("received prepare");
+                    }
+                    
+                }
+                break;
+            case "COMMIT":
+                if (isCommitMessage(message)) {
 
-        // send response to server
+                    const msg = {
+                        sequence: message.sequence,
+                        view: message.view,
+                        blockHash: message.blockHash
+                    } = message;
+                    const { PBFT } = useStore.getState();
+                    PBFT.log[message.sequence].commits.push("commited");
+                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    if (PBFT.log[message.sequence].commits.length >= quorum) {
 
-        sendVoteYes(suggestedBlock);
-        // socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
-        return;
-      } else {
-       console.error("Blockchain addition rejected due to hash missmatch");
-        sendVoteNo();
-        //socket.emit("VOTE_BLOCK_NO", tempChain);
-        // send response to server io.emit("VOTE_BLOCK_NO")
-      }
-    }
-  }
+                        console.log("2f prepared");
+                        handleCommit(msg);
 
-  if (isVote(data)) {
-    const { type, newChain } = data;
-    console.log("isVote on open");
-    switch (type) {
-      case "VOTE_BLOCK_YES":
-        console.log("Received vote in the possitive:", data.type);
-        yesVotes++;
-        console.log("yesVotes:", yesVotes);
-            if (yesVotes >= connectedPeers.length) {
-                console.log("updating blockchain");
-                useStore.getState().addBlock(newChain);
-          // handleMetadata(newChain);
-          /*
-          for (const conn of connections) {
-              if (conn.open) {
-                  // send only the data and set type to a specific name for validation 
-                  conn.send({ type: "NEW_BLOCKCHAIN", payload: newChain });
-                  console.log("voted yes", newChain);
-              } else {
-                  console.log("connection not open");
-              }
-          }
-          */
-          // socket.emit("YES_VOTE", newChain);
-          // reset the voting variables
-          yesVotes = 0;
-          noVotes = 0;
-          return;
-          // io.emit("YES_VOTE" or even "NEW_BLOCKCHAIN" since the block updates after this, blockchain.chain(take the data and use it here to compute the new block))
-          // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
+                    } else {
+                        console.log("received commit");
+                    }
+                    
+                }
+                break;
+            case "request":
+                if (isDownloadRequest(data)) {
+                    const { id } = data;
+
+                        const arrayBuffer = await readFileFromOPFS(`page_${id}.mhtml`);
+                        connection.send({ type: "mhtml_file", mhtmlFile: arrayBuffer, id });
+                        console.log("file sent");
+                }
+                break;
+            case "mhtml_file":
+                if (isMhtmlFile(data)) {
+                    const { mhtmlFile, id } = data;
+
+                        console.log("received file");
+                        // Convert Uint8Array to ArrayBuffer if necessary
+                        const arrayBuffer = mhtmlFile instanceof Uint8Array ? mhtmlFile.buffer : mhtmlFile;
+                        await handleFileData(`page_${id}.mhtml`, arrayBuffer);
+                        console.log("converted and downloaded file");
+                    
+                }
+                break;
+
         }
-        if (yesVotes + noVotes >= connectedPeers.length) {
-            if (yesVotes >= noVotes) {
-                console.log("updating blockchain");
-                useStore.getState().addBlock(newChain);
-            //handleMetadata(newChain);
-            // reset the voting variables
-            yesVotes = 0;
-            noVotes = 0;
-            return;
-          } else {
-            for (const conn of connections) {
-              if (conn.open) {
-                // send only the data and set type to a specific name for validation
-                conn.send({ type: "MAJORITY_NO" });
-                console.log("voted no");
-              } else {
-                console.log("connection not open");
-              }
-            }
-            // reset the voting variables
-            yesVotes = 0;
-            noVotes = 0;
-            return;
-          }
-        }
-        break;
-      case "VOTE_BLOCK_NO":
-        console.log("Received vote in the negative:", data.type);
-        noVotes++;
-        if (noVotes > connectedPeers.length / 2) {
-          for (const conn of connections) {
-            if (conn.open) {
-              // send only the data and set type to a specific name for validation
-              conn.send({ type: "MAJORITY_NO" });
-              console.log("voted no");
-            } else {
-              console.log("connection not open");
-            }
-          }
-          // reset the voting variables
-          yesVotes = 0;
-          noVotes = 0;
-          return;
-          // io.emit("YES_VOTE" or even "NEW_BLOCKCHAIN" since the block updates after this, blockchain.chain(take the data and use it here to compute the new block))
-          // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
-        }
-        if (yesVotes + noVotes >= connectedPeers.length) {
-            if (yesVotes >= noVotes) {
-                console.log("updating blockchain");
-                useStore.getState().addBlock(newChain);
-            //handleMetadata(newChain);
-            // reset the voting variables
-            yesVotes = 0;
-            noVotes = 0;
-            return;
-          } else {
-            for (const conn of connections) {
-              if (conn.open) {
-                // send only the data and set type to a specific name for validation
-                conn.send({ type: "MAJORITY_NO" });
-                console.log("voted no");
-              } else {
-                console.log("connection not open");
-              }
-            }
-            // reset the voting variables
-            yesVotes = 0;
-            noVotes = 0;
-            return;
-          }
-        }
-        break;
-      // Add more cases as needed
     }
-    return;
-  }
-
-  //  if (data === "request_blockchain") {
-  //      console.log("request from: ",connection)
-  //      const payload = useStore.getState().blockchain.chain
-  //      console.log("blockchain request is being handled")
-  //  connection.send({
-  //    type: "NEW_BLOCKCHAIN",
-  //    payload: payload,
-  //  });
-  //}
-
-  if (isDownloadRequest(data)) {
-    const { id, type } = data;
-
-    if (type === "request") {
-      const arrayBuffer = await readFileFromOPFS(`page_${id}.mhtml`);
-      connection.send({ type: "mhtml_file", mhtmlFile: arrayBuffer, id });
-      console.log("file sent");
-    }
-  }
-
-  if (isMhtmlFile(data)) {
-    const { mhtmlFile, type, id } = data;
-
-    if (type === "mhtml_file") {
-      console.log("received file");
-      // Convert Uint8Array to ArrayBuffer if necessary
-      const arrayBuffer = mhtmlFile instanceof Uint8Array ? mhtmlFile.buffer : mhtmlFile;
-      await handleFileData(`page_${id}.mhtml`, arrayBuffer);
-      console.log("converted and downloaded file");
-    }
-  }
-
-  // if (isMetadata(data)) {
-    // TODO: function restoreData has to be updated
-    // Restore the data before processing
-    // const restoredData = restoreData(data);
-
-    // Process the restored data
-    // console.log("Restored data:", restoredData);
-    // useStore.getState().addBlock(restoredData);
-  // }
-
-  // else {
-  //   console.error("Received invalid data format:", data);
-  // }
 }
+
+// async function handleIncomingData(
+//  data: unknown,
+//  connection: DataConnection,
+//  connections: DataConnection[],
+//  connectedPeers: string[]
+//) {
+//  if (isBlockchainMessage(data)) {
+//    const { type, payload } = data;
+
+//    if (type === "NEW_BLOCKCHAIN") {
+//        useStore.getState().updateChain(payload);
+//        console.log("blockchain updated", useStore.getState().blockchain);
+//    }
+//  }
+
+//  if (isBlockchainSuggestion(data)) {
+//    console.log("got suggestion");
+//    const { type, suggestedBlock } = data;
+
+//    if (type === "SUGGEST_BLOCK") {
+//      // temp blockchain to check before updating the real one with a new block
+
+//      //const tempChain: Blockchain = useStore.getState().blockchain;
+
+//      // made a clone so as to not refence the same object un useStore
+//        const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+//      console.log(
+//        "Before adding block (stringified so no object methods)::",
+//        JSON.parse(JSON.stringify(tempChain))
+//      );
+
+//      // temp block containing proposed metadata
+//      const tempBlock = new Block(
+//        tempChain!.chain.length,
+//        Date.now(),
+//        suggestedBlock
+//      );
+
+//      await tempChain!.addBlock(tempBlock);
+//      console.log("added new block tempChain", tempChain);
+//      // console.log("latest block", tempChain.getLatestBlock());
+//      if ((await tempChain.isChainValid()) == true) {
+//        // add more checks
+//        console.log("chain has correct hash, shit worked");
+
+//        // send response to server
+
+//        sendVoteYes(suggestedBlock);
+//        // socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
+//        return;
+//      } else {
+//       console.error("Blockchain addition rejected due to hash missmatch");
+//        sendVoteNo();
+//        //socket.emit("VOTE_BLOCK_NO", tempChain);
+//        // send response to server io.emit("VOTE_BLOCK_NO")
+//      }
+//    }
+//  }
+
+//  if (isVote(data)) {
+//    const { type, newChain } = data;
+//    console.log("isVote on open");
+//    switch (type) {
+//      case "VOTE_BLOCK_YES":
+//        console.log("Received vote in the possitive:", data.type);
+//        yesVotes++;
+//        console.log("yesVotes:", yesVotes);
+//            if (yesVotes >= connectedPeers.length) {
+//                console.log("updating blockchain");
+//                useStore.getState().addBlock(newChain);
+//          // handleMetadata(newChain);
+//          /*
+//          for (const conn of connections) {
+//              if (conn.open) {
+//                  // send only the data and set type to a specific name for validation 
+//                  conn.send({ type: "NEW_BLOCKCHAIN", payload: newChain });
+//                  console.log("voted yes", newChain);
+//              } else {
+//                  console.log("connection not open");
+//              }
+//          }
+//          */
+//          // socket.emit("YES_VOTE", newChain);
+//          // reset the voting variables
+//          yesVotes = 0;
+//          noVotes = 0;
+//          return;
+//          // io.emit("YES_VOTE" or even "NEW_BLOCKCHAIN" since the block updates after this, blockchain.chain(take the data and use it here to compute the new block))
+//          // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
+//        }
+//        if (yesVotes + noVotes >= connectedPeers.length) {
+//            if (yesVotes >= noVotes) {
+//                console.log("updating blockchain");
+//                useStore.getState().addBlock(newChain);
+//            //handleMetadata(newChain);
+//            // reset the voting variables
+//            yesVotes = 0;
+//            noVotes = 0;
+//            return;
+//          } else {
+//            for (const conn of connections) {
+//              if (conn.open) {
+//                // send only the data and set type to a specific name for validation
+//                conn.send({ type: "MAJORITY_NO" });
+//                console.log("voted no");
+//              } else {
+//                console.log("connection not open");
+//              }
+//            }
+//            // reset the voting variables
+//            yesVotes = 0;
+//            noVotes = 0;
+//            return;
+//          }
+//        }
+//        break;
+//      case "VOTE_BLOCK_NO":
+//        console.log("Received vote in the negative:", data.type);
+//        noVotes++;
+//        if (noVotes > connectedPeers.length / 2) {
+//          for (const conn of connections) {
+//            if (conn.open) {
+//              // send only the data and set type to a specific name for validation
+//              conn.send({ type: "MAJORITY_NO" });
+//              console.log("voted no");
+//            } else {
+//              console.log("connection not open");
+//            }
+//          }
+//          // reset the voting variables
+//          yesVotes = 0;
+//          noVotes = 0;
+//          return;
+//          // io.emit("YES_VOTE" or even "NEW_BLOCKCHAIN" since the block updates after this, blockchain.chain(take the data and use it here to compute the new block))
+//          // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
+//        }
+//        if (yesVotes + noVotes >= connectedPeers.length) {
+//            if (yesVotes >= noVotes) {
+//                console.log("updating blockchain");
+//                useStore.getState().addBlock(newChain);
+//            //handleMetadata(newChain);
+//            // reset the voting variables
+//            yesVotes = 0;
+//            noVotes = 0;
+//            return;
+//          } else {
+//            for (const conn of connections) {
+//              if (conn.open) {
+//                // send only the data and set type to a specific name for validation
+//                conn.send({ type: "MAJORITY_NO" });
+//                console.log("voted no");
+//              } else {
+//                console.log("connection not open");
+//              }
+//            }
+//            // reset the voting variables
+//            yesVotes = 0;
+//            noVotes = 0;
+//            return;
+//          }
+//        }
+//        break;
+//      // Add more cases as needed
+//    }
+//    return;
+//  }
+
+//  //  if (data === "request_blockchain") {
+//  //      console.log("request from: ",connection)
+//  //      const payload = useStore.getState().blockchain.chain
+//  //      console.log("blockchain request is being handled")
+//  //  connection.send({
+//  //    type: "NEW_BLOCKCHAIN",
+//  //    payload: payload,
+//  //  });
+//  //}
+
+//  if (isDownloadRequest(data)) {
+//    const { id, type } = data;
+
+//    if (type === "request") {
+//      const arrayBuffer = await readFileFromOPFS(`page_${id}.mhtml`);
+//      connection.send({ type: "mhtml_file", mhtmlFile: arrayBuffer, id });
+//      console.log("file sent");
+//    }
+//  }
+
+//  if (isMhtmlFile(data)) {
+//    const { mhtmlFile, type, id } = data;
+
+//    if (type === "mhtml_file") {
+//      console.log("received file");
+//      // Convert Uint8Array to ArrayBuffer if necessary
+//      const arrayBuffer = mhtmlFile instanceof Uint8Array ? mhtmlFile.buffer : mhtmlFile;
+//      await handleFileData(`page_${id}.mhtml`, arrayBuffer);
+//      console.log("converted and downloaded file");
+//    }
+//  }
+
+//  // if (isMetadata(data)) {
+//    // TODO: function restoreData has to be updated
+//    // Restore the data before processing
+//    // const restoredData = restoreData(data);
+
+//    // Process the restored data
+//    // console.log("Restored data:", restoredData);
+//    // useStore.getState().addBlock(restoredData);
+//  // }
+
+//  // else {
+//  //   console.error("Received invalid data format:", data);
+//  // }
+//} // here
 
 const handleFileData = async (
   filename: string,
@@ -456,17 +569,17 @@ const readFileFromOPFS = async (filename: string): Promise<ArrayBuffer | undefin
 //   };
 // }
 
-function sendVoteNo() {
-  const connections = useStore.getState().connections;
+//function sendVoteNo() {
+//  const connections = useStore.getState().connections;
 
-  console.log("Sending vote to connections:", connections);
+//  console.log("Sending vote to connections:", connections);
 
-  for (const conn of connections) {
-    if (conn.open) {
-      conn.send({ type: "VOTE_BLOCK_NO" });
-      console.log("Voted no");
-    } else {
-      console.log("connection not open");
-    }
-  }
-}
+//  for (const conn of connections) {
+//    if (conn.open) {
+//      conn.send({ type: "VOTE_BLOCK_NO" });
+//      console.log("Voted no");
+//    } else {
+//      console.log("connection not open");
+//    }
+//  }
+//}

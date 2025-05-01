@@ -12,7 +12,7 @@ import { Metadata } from "../lib/types/types";
 import { handleMetadata } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { saveFiles } from "@/lib/utils";
-import { suggestBlock } from "@/lib/utils";
+import { requestBlock } from "@/lib/utils";
 
 type PreviewCardProps = {
   preview: Metadata;
@@ -55,7 +55,8 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
       try {
         await saveFiles(preview);
         // handleMetadata(preview);
-        suggestBlock(preview)
+          // suggestBlock(preview)
+          requestBlock(preview)
       } catch (error) {
         console.error("Error during save and upload:", error);
       } finally {

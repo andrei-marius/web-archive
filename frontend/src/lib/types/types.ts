@@ -50,6 +50,34 @@ type OPFSFile = {
   content: string | ArrayBuffer | null;
 };
 
+type Message = {
+    type: string;
+    [key: string]: unknown
+};
+
+type PrePrepareMessage = {
+    type: 'PRE-PREPARE';
+    suggestedBlock: Metadata;
+    view: number;
+    sequence: number;
+};
+
+type PrepareMessage = {
+    type: 'PREPARE';
+    blockHash: string;
+    view: number;
+    sequence: number;
+    //senderId: string;
+};
+
+type CommitMessage = {
+    type: 'COMMIT';
+    blockHash: string;
+    view: number;
+    sequence: number;
+    //senderId: string;
+};
+
 export type {
   MhtmlFile,
   DownloadRequest,
@@ -58,4 +86,8 @@ export type {
   BlockchainMessage,
   Metadata,
   OPFSFile,
+  Message,
+  PrePrepareMessage,
+  PrepareMessage,
+  CommitMessage,
 };
