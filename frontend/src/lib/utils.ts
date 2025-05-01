@@ -315,7 +315,10 @@ export function blockRequested(data: Metadata) {
 
 export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePrepareMessage) {
     const { PBFT } = useStore.getState();
-    if (PBFT.log[sequence]) return;
+    if (PBFT.log[sequence]) {
+        console.log("old sequence");
+        return;
+    }
 
     const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
 
