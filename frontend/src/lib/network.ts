@@ -153,18 +153,18 @@ async function handleMessage(
                         view: message.view,
                         blockHash: message.blockHash
                     } = message;
-                    let { PBFT } = useStore.getState();
                     const entry: Partial<PBFTLogEntry> = {
                         blockHash: message.blockHash,
                         prepares: ["prepared"],
                     }
-                    useStore.getState().appendToLog(message.sequence,entry);
                     // ensures that two thirds majority has sent prepare
-                     ;
+                    useStore.getState().appendToLog(message.sequence, entry);
+                    const updatedPBFT = useStore.getState().PBFT;
+
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
                     console.log("log: ", useStore.getState().PBFT.log[message.sequence].prepares);
                     console.log("length: ", useStore.getState().PBFT.log[message.sequence].prepares.length);
-                    if (PBFT.log[message.sequence].prepares.length >= quorum) {
+                    if (updatedPBFT.log[message.sequence].prepares.length >= quorum) {
 
                         console.log("2f prepared");
                         handlePrepare(msg);
