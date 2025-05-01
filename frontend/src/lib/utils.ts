@@ -31,12 +31,14 @@ export async function suggestBlock(data: Metadata) {
   );
   await tempChain!.addBlock(tempBlock);
   console.log("added new block tempChain", tempChain);
-  if ((await tempChain.isChainValid()) == true) {
+    if ((await tempChain.isChainValid()) == true) {
+        const newChain = suggestBlock;
     console.log("chain has correct hash, shit worked");
       // socket.emit("VOTE_BLOCK_YES", tempChain);
       for (const conn of connections) {
     if (conn.open) {
-      conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
+        conn.send({ type: "SUGGEST_BLOCK", suggestedBlock });
+        conn.send({ type: "VOTE_BLOCK_YES", newChain });
       console.log("sent block for validation", suggestedBlock);
     } else {
       console.log("connection not open");
