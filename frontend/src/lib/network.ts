@@ -158,9 +158,10 @@ async function handleMessage(
                     }
                     useStore.getState().appendToLog(message.sequence,entry);
                     // ensures that two thirds majority has sent prepare
+                     ;
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    console.log("log: ", PBFT.log[message.sequence].prepares);
-                    console.log("length: ", PBFT.log[message.sequence].prepares.length);
+                    console.log("log: ", useStore.getState().PBFT.log[message.sequence].prepares);
+                    console.log("length: ", useStore.getState().PBFT.log[message.sequence].prepares.length);
                     if (PBFT.log[message.sequence].prepares.length >= quorum) {
 
                         console.log("2f prepared");
