@@ -368,7 +368,10 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
 
 export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
     const PBFT = useStore.getState().PBFT;
-    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
+    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) {
+        console.log("block.hash does not match blockHash");
+        return;
+    }
     const commitMsg = {
         type: 'COMMIT',
         sequence: sequence,
