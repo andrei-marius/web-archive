@@ -32,7 +32,8 @@ export async function suggestBlock(data: Metadata) {
   await tempChain!.addBlock(tempBlock);
   console.log("added new block tempChain", tempChain);
     if ((await tempChain.isChainValid()) == true) {
-        const newChain = suggestBlock;
+        const newChain = data;
+        sendVoteYes(newChain);
     console.log("chain has correct hash, shit worked");
       // socket.emit("VOTE_BLOCK_YES", tempChain);
       for (const conn of connections) {
@@ -42,15 +43,7 @@ export async function suggestBlock(data: Metadata) {
     } else {
       console.log("connection not open");
     }
-        }
-        for (const conn of connections) {
-            if (conn.open) {
-                conn.send({ type: "VOTE_BLOCK_YES", newChain });
-                console.log("sent block for validation", suggestedBlock);
-            } else {
-                console.log("connection not open");
-            }
-        }
+        } 
     } else {
         
     console.error("Blockchain addition rejected due to hash missmatch");
@@ -59,6 +52,20 @@ export async function suggestBlock(data: Metadata) {
   
 }
 
+export function sendVoteYes(data: Metadata) {
+    const connections = useStore.getState().connections;
+
+    console.log("Sending vote to connections:", connections);
+    const newChain = data;
+    for (const conn of connections) {
+        if (conn.open) {
+            conn.send({ type: "VOTE_BLOCK_YES", newChain });
+            console.log("Voted yes", newChain);
+        } else {
+            console.log("connection not open");
+        }
+    }
+}
 function dataURLToUint8Array(dataURL: any) {
   const base64String = dataURL.split(',')[1];
 

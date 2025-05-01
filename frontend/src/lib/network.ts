@@ -12,7 +12,7 @@ import {
   isBlockchainSuggestion,
   isBlockchainMessage,
 } from "./safeguards";
-import { handleMetadata } from "./utils";
+import { handleMetadata, sendVoteYes } from "./utils";
 let yesVotes = 0;
 let noVotes = 0;
 
@@ -456,20 +456,6 @@ const readFileFromOPFS = async (filename: string): Promise<ArrayBuffer | undefin
 //   };
 // }
 
-function sendVoteYes(data: Metadata) {
-  const connections = useStore.getState().connections;
-
-  console.log("Sending vote to connections:", connections);
-  const newChain = data;
-  for (const conn of connections) {
-    if (conn.open) {
-      conn.send({ type: "VOTE_BLOCK_YES", newChain });
-      console.log("Voted yes", newChain);
-    } else {
-      console.log("connection not open");
-    }
-  }
-}
 function sendVoteNo() {
   const connections = useStore.getState().connections;
 
