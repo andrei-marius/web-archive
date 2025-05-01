@@ -72,14 +72,18 @@ const useStore = create<AppState>((set) => ({
                 log: {
                     ...state.PBFT.log,
                     [sequence]: {
-                        ...state.PBFT.log[sequence], // Merge existing entry if it exists
-                        ...entry, // Merge the new entry into the existing entry
-                        // You could also provide default values to ensure prepares and commits are arrays
-                        prepares: state.PBFT.log[sequence]?.prepares || [],
-                        commits: state.PBFT.log[sequence]?.commits || [],
-                    },
+                        ...state.PBFT.log[sequence],
+                        prepares: entry.prepares
+                            ? [...new Set([...(state.PBFT.log[sequence]?.prepares || []), ...entry.prepares])]
+                            : state.PBFT.log[sequence]?.prepares || [],
+                        commits: entry.commits
+                            ? [...new Set([...(state.PBFT.log[sequence]?.commits || []), ...entry.commits])]
+                            : state.PBFT.log[sequence]?.commits || [],
+                        ...entry, // include other fields like blockHash, suggestedBlock, etc.
+                    }
+                    ,
                 },
-            },
+            }
         })),
 
 }));
