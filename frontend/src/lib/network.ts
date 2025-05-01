@@ -23,6 +23,7 @@ import {
     handlePrePrepare,
     handlePrepare,
     handleCommit,
+    PBFTLogEntry,
 } from "./utils";
 let yesVotes = 0;
 let noVotes = 0;
@@ -151,7 +152,11 @@ async function handleMessage(
                         blockHash: message.blockHash
                     } = message;
                     const { PBFT } = useStore.getState();
-                    PBFT.log[message.sequence].prepares.push("received");
+                    const entry: Partial<PBFTLogEntry> = {
+                        blockHash: message.blockHash,
+                        prepares: ["prepared"],
+                    }
+                    useStore.getState().appendToLog(message.sequence,entry);
                     // ensures that two thirds majority has sent prepare
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
                     if (PBFT.log[message.sequence].prepares.length >= quorum) {

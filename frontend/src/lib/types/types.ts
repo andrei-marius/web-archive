@@ -78,6 +78,21 @@ type CommitMessage = {
     //senderId: string;
 };
 
+type PBFTLogEntry = {
+    suggestedBlock: Metadata;
+    blockHash: string,
+    block: Block;
+    prepares: string[]; // peerIds that sent PREPARE
+    commits: string[];  // peerIds that sent COMMIT
+};
+
+type PBFTState = {
+    role: "primary" | "replica";
+    sequence: number;
+    view: number;
+    log: Record<number, PBFTLogEntry>;
+};
+
 export type {
   MhtmlFile,
   DownloadRequest,
@@ -90,4 +105,6 @@ export type {
   PrePrepareMessage,
   PrepareMessage,
   CommitMessage,
+  PBFTState,
+  PBFTLogEntry,
 };

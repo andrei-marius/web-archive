@@ -4,6 +4,10 @@ import { Metadata } from "./types/types";
 import { Socket } from "socket.io-client";
 import { DataConnection } from "peerjs";
 import io from "socket.io-client";
+import {
+    PBFTState,
+    PBFTLogEntry,
+} from "@/lib/types/types";
 
 type AppState = {
   blockchain: Blockchain;
@@ -22,19 +26,6 @@ type AppState = {
     ) => void;
 };
 
-type PBFTLogEntry = {
-    suggestedBlock: Metadata;
-    block: Block;
-    prepares: string[]; // peerIds that sent PREPARE
-    commits: string[];  // peerIds that sent COMMIT
-};
-
-type PBFTState = {
-    role: "primary" | "replica";
-    sequence: number;
-    view: number;
-    log: Record<number, PBFTLogEntry>;
-};
 
 const useStore = create<AppState>((set) => ({
   blockchain: new Blockchain(),
