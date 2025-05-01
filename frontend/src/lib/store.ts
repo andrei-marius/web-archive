@@ -73,22 +73,21 @@ const useStore = create<AppState>((set) => ({
                     ...state.PBFT.log,
                     [sequence]: {
                         ...state.PBFT.log[sequence],
+                        ...entry, // <- bring in new partial data
 
-                        // Append to prepares if provided, allow duplicates
                         prepares: entry.prepares
                             ? [...(state.PBFT.log[sequence]?.prepares || []), ...entry.prepares]
                             : state.PBFT.log[sequence]?.prepares || [],
 
-                        // Append to commits if provided, allow duplicates
                         commits: entry.commits
                             ? [...(state.PBFT.log[sequence]?.commits || []), ...entry.commits]
                             : state.PBFT.log[sequence]?.commits || [],
 
-                        // Overwrite or update these fields if they exist in entry
-                        suggestedBlock: entry.suggestedBlock ?? state.PBFT.log[sequence]?.suggestedBlock,
                         block: entry.block ?? state.PBFT.log[sequence]?.block,
                         blockHash: entry.blockHash ?? state.PBFT.log[sequence]?.blockHash,
+                        suggestedBlock: entry.suggestedBlock ?? state.PBFT.log[sequence]?.suggestedBlock,
                     }
+
 ,
                 },
             }
