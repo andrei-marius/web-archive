@@ -41,7 +41,7 @@ let noVotes = 0;
               connection.on("open", () => {
                 console.log(peerId, "connected to:", id);
                 connections.push(connection);
-                connection.send("request_blockchain");
+                //connection.send("request_blockchain");
   
                 connection.on("data", async function (data: unknown) {
                   console.log("Received data:", data);
@@ -83,20 +83,20 @@ let noVotes = 0;
       console.log(connectedPeers);
     });
   
-    socket.on("init_blockchain", (data) => {
-        console.log("Received blockchain from server:", data);
-        useStore.getState().updateChain(data);
-    });
+    //socket.on("init_blockchain", (data) => {
+    //    console.log("Received blockchain from server:", data);
+    //    useStore.getState().updateChain(data);
+    //});
   
-    socket.on("YES_VOTE", (data) => {
-      const tempChain: Blockchain = data;
-      console.log("Voting concluded, block added to chain");
-      useStore.getState().updateChain(tempChain.chain);
-    });
+    //socket.on("YES_VOTE", (data) => {
+    //  const tempChain: Blockchain = data;
+    //  console.log("Voting concluded, block added to chain");
+    //  useStore.getState().updateChain(tempChain.chain);
+    //});
   
-    socket.on("NO_VOTE", () => {
-      console.log("Voting concluded, suggested block was rejected");
-    });
+    //socket.on("NO_VOTE", () => {
+    //  console.log("Voting concluded, suggested block was rejected");
+    //});
   }
 })();
 
@@ -169,8 +169,9 @@ async function handleIncomingData(
         yesVotes++;
         console.log("yesVotes:", yesVotes);
             if (yesVotes >= connectedPeers.length) {
-
-          handleMetadata(newChain);
+                console.log("updating blockchain");
+                useStore.getState().addBlock(newChain);
+          // handleMetadata(newChain);
           /*
           for (const conn of connections) {
               if (conn.open) {
@@ -191,8 +192,10 @@ async function handleIncomingData(
           // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
         }
         if (yesVotes + noVotes >= connectedPeers.length) {
-          if (yesVotes >= noVotes) {
-            handleMetadata(newChain);
+            if (yesVotes >= noVotes) {
+                console.log("updating blockchain");
+                useStore.getState().addBlock(newChain);
+            //handleMetadata(newChain);
             // reset the voting variables
             yesVotes = 0;
             noVotes = 0;
@@ -235,8 +238,10 @@ async function handleIncomingData(
           // could even consider finding the original peer and making the use the original send function from io.emit("YES_VOTE")
         }
         if (yesVotes + noVotes >= connectedPeers.length) {
-          if (yesVotes >= noVotes) {
-            handleMetadata(newChain);
+            if (yesVotes >= noVotes) {
+                console.log("updating blockchain");
+                useStore.getState().addBlock(newChain);
+            //handleMetadata(newChain);
             // reset the voting variables
             yesVotes = 0;
             noVotes = 0;
@@ -263,15 +268,15 @@ async function handleIncomingData(
     return;
   }
 
-    if (data === "request_blockchain") {
-        console.log("request from: ",connection)
-        const payload = useStore.getState().blockchain.chain
-        console.log("blockchain request is being handled")
-    connection.send({
-      type: "NEW_BLOCKCHAIN",
-      payload: payload,
-    });
-  }
+  //  if (data === "request_blockchain") {
+  //      console.log("request from: ",connection)
+  //      const payload = useStore.getState().blockchain.chain
+  //      console.log("blockchain request is being handled")
+  //  connection.send({
+  //    type: "NEW_BLOCKCHAIN",
+  //    payload: payload,
+  //  });
+  //}
 
   if (isDownloadRequest(data)) {
     const { id, type } = data;

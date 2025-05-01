@@ -106,9 +106,9 @@ let connectedPeers = [];
 io.on("connection", (socket) => {
   console.log(`${socket.id} connected`);
 
-  if (connectedPeers.length < 1) {
-    io.emit("init_blockchain", blockchain.chain);
-  }
+  //if (connectedPeers.length < 1) {
+  //  io.emit("init_blockchain", blockchain.chain);
+  //}
 
   connectedPeers.push(socket.id);
 

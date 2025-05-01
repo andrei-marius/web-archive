@@ -50,9 +50,11 @@ export class Blockchain {
   }
 
   async addBlock(newBlock: Block): Promise<void> {
-    if (this.chain.length === 0) {
-      newBlock.previousHash = "";
-    } else {
+      if (this.chain.length === 0) {
+          const genesisBlock = new Block(0, Date.now(), "Genesis Block");
+          genesisBlock.calculateHash();
+          this.addBlock(genesisBlock);
+     
       newBlock.previousHash = this.getLatestBlock().hash;
     }
 
