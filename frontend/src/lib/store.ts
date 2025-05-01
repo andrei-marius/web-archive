@@ -72,12 +72,16 @@ const useStore = create<AppState>((set) => ({
                 log: {
                     ...state.PBFT.log,
                     [sequence]: {
-                        ...state.PBFT.log[sequence],
-                        ...entry,
+                        ...state.PBFT.log[sequence], // Merge existing entry if it exists
+                        ...entry, // Merge the new entry into the existing entry
+                        // You could also provide default values to ensure prepares and commits are arrays
+                        prepares: state.PBFT.log[sequence]?.prepares || [],
+                        commits: state.PBFT.log[sequence]?.commits || [],
                     },
                 },
             },
         })),
+
 }));
 
 export default useStore;
