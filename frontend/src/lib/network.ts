@@ -125,8 +125,7 @@ async function handleIncomingData(
       //const tempChain: Blockchain = useStore.getState().blockchain;
 
       // made a clone so as to not refence the same object un useStore
-      const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
-
+        const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
       console.log(
         "Before adding block (stringified so no object methods)::",
         JSON.parse(JSON.stringify(tempChain))
@@ -152,7 +151,7 @@ async function handleIncomingData(
         // socket.emit("VOTE_BLOCK_YES", tempChain); //perhaps send along the id(connection array filter id)
         return;
       } else {
-        console.error("Blockchain addition rejected due to hash missmatch");
+       console.error("Blockchain addition rejected due to hash missmatch");
         sendVoteNo();
         //socket.emit("VOTE_BLOCK_NO", tempChain);
         // send response to server io.emit("VOTE_BLOCK_NO")

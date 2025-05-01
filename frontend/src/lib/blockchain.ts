@@ -32,35 +32,38 @@ export class Block {
 }
 
 export class Blockchain {
-  public chain: Block[];
+    public chain: Block[] = [];
 
-  constructor(chain?: Block[]) {
-    this.chain = chain
-      ? chain.map(
-          (block) =>
-            new Block(
-              block.index,
-              block.timestamp,
-              block.data,
-              block.previousHash,
-              block.hash
-            )
-        )
-      : [];
-  }
-
-  async addBlock(newBlock: Block): Promise<void> {
-      if (this.chain.length === 0) {
-          const genesisBlock = new Block(0, Date.now(), "Genesis Block");
-          genesisBlock.calculateHash();
-          this.addBlock(genesisBlock);
-     
-      newBlock.previousHash = this.getLatestBlock().hash;
+    constructor(chain?: Block[]) {
+        if (chain && chain.length) {
+            // Rehydrate existing chain
+            this.chain = chain.map(
+                (block) =>
+                    new Block(
+                        block.index,
+                        block.timestamp,
+                        block.data,
+                        block.previousHash,
+                        block.hash
+                    )
+            );
+        } else {
+            // No chain provided — auto-create genesis block
+            this.initializeGenesisBlock();
+        }
     }
 
-    await newBlock.calculateHash();
+    private async initializeGenesisBlock() {
+        const genesisBlock = new Block(0, Date.now(), "Genesis Block");
+        await genesisBlock.calculateHash();
+        this.chain.push(genesisBlock);
+    }
 
-    this.chain = [...this.chain, newBlock];
+    async addBlock(newBlock: Block): Promise<void> {
+        const latestBlock = this.getLatestBlock();
+        newBlock.previousHash = latestBlock.hash;
+        await newBlock.calculateHash();
+        this.chain.push(newBlock);
   }
 
   getLatestBlock(): Block {
