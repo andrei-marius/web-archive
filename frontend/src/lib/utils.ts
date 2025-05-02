@@ -285,7 +285,7 @@ export function sendToAll(msg: Message) {
     }
 }
 
-export function blockRequested(data: Metadata) {
+export async function blockRequested(data: Metadata) {
     // check that the receipiant is the primary
     // if (PBFTstate.role !== 'primary') return;
     //if (PBFTstate.log[sequence]) return;
@@ -302,6 +302,28 @@ export function blockRequested(data: Metadata) {
     }
     useStore.getState().updatePBFT(state);
 
+    const originalChain = useStore.getState().blockchain;
+    const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
+
+
+    console.log(
+        "Before adding block (stringified so no object methods):",
+        JSON.parse(JSON.stringify(tempChain))
+    );
+
+    const tempBlock = new Block(
+        tempChain!.chain.length,
+        Date.now(),
+        data
+    );
+
+    await tempChain!.addBlock(tempBlock);
+    console.log("added new block tempChain", tempChain);
+    if ((await tempChain.isChainValid()) == true) {
+        console.log("chain has correct hash")
+    } else {
+        console.error("Blockchain addition rejected due to hash missmatch");
+    }
     //the papers log format (pre-prepare,v(view number),n(sequence number),d(message digest/hash))?p(Primary signed),m (request message)
     const log = {
         suggestedBlock: data
@@ -320,15 +342,37 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
         return;
     }
 
-    const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+    const originalChain = useStore.getState().blockchain;
+    const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
+
+
+    console.log(
+        "Before adding block (stringified so no object methods):",
+        JSON.parse(JSON.stringify(tempChain))
+    );
 
     const tempBlock = new Block(
         tempChain!.chain.length,
         Date.now(),
         suggestedBlock
     );
-    const blockHash = tempBlock.hash;
+
     await tempChain!.addBlock(tempBlock);
+    console.log("added new block to tempChain", tempChain);
+    const chainBlock = tempChain.getLatestBlock();
+    const blockHash = chainBlock.hash;
+    console.log("blockHash", blockHash);
+    //const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
+
+    //const tempBlock = new Block(
+    //    tempChain!.chain.length,
+    //    Date.now(),
+    //    suggestedBlock
+    //);
+    //const blockHash = tempBlock.hash;
+    //console.log("blockHash: ", blockHash);
+    //await tempChain!.addBlock(tempBlock);
+    
     if ((await tempChain.isChainValid()) == true) {
 
         const state = {
@@ -343,12 +387,13 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
         //the pre - prepare.
         const log = {
             suggestedBlock: suggestedBlock,
-            block: tempBlock,
+            block: chainBlock,
             blockHash: blockHash
         }
 
         useStore.getState().appendToLog(sequence, log);
-        console.log("updated PBFT log: ", PBFT.log)
+        const updatedPBFT = useStore.getState().PBFT;
+        console.log("updated PBFT log: ", updatedPBFT.log[sequence].block)
         const prepareMsg = {
             type: 'PREPARE',
             sequence: sequence,
