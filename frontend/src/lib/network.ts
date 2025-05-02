@@ -29,10 +29,6 @@ let yesVotes = 0;
 let noVotes = 0;
 
 (() => {
-    const blockchain = useStore.getState().blockchain;
-    if (blockchain.chain.length === 0) {
-        console.log("Creating Genesis Block");
-    }
 
   let peer: Peer;
   let connectedPeers: string[] = [];
