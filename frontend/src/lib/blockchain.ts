@@ -2,20 +2,20 @@ import { Metadata } from "./types/types";
 
 export class Block {
   public index: number;
-  public timestamp: number;
+  /*public timestamp: number;*/
   public data: Metadata | string;
   public previousHash: string;
   public hash: string;
 
   constructor(
     index: number,
-    timestamp: number,
+    /*timestamp: number,*/
     data: Metadata | string,
     previousHash: string = "",
     hash?: string
   ) {
     this.index = index;
-    this.timestamp = timestamp;
+    /*this.timestamp = timestamp;*/
     this.data = data;
     this.previousHash = previousHash;
     this.hash = hash || "";
@@ -24,7 +24,7 @@ export class Block {
   async calculateHash(): Promise<void> {
     const data =
       this.index +
-      this.timestamp +
+      //this.timestamp +
       JSON.stringify(this.data) +
       this.previousHash;
     this.hash = await calculateHash(data);
@@ -41,7 +41,7 @@ export class Blockchain {
                 (block) =>
                     new Block(
                         block.index,
-                        block.timestamp,
+                        /*block.timestamp,*/
                         block.data,
                         block.previousHash,
                         block.hash
@@ -54,7 +54,7 @@ export class Blockchain {
     }
 
     private async initializeGenesisBlock() {
-        const genesisBlock = new Block(0, Date.now(), "Genesis Block");
+        const genesisBlock = new Block(0, /*Date.now(),*/ "Genesis Block");
         await genesisBlock.calculateHash();
         this.chain.push(genesisBlock);
     }
