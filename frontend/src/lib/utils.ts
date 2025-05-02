@@ -412,7 +412,10 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
 }
 
 export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
+    console.log("func handlePrepare, blockHash received: ", blockHash);
     const PBFT = useStore.getState().PBFT;
+    console.log("func handlePrepare, sequence: ", sequence);
+    console.log("func handlePrepare, PBFT state log[sequence].block.hash: ", PBFT.log[sequence].block.hash);
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) {
         console.log("block.hash does not match blockHash");
         return;
