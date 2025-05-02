@@ -154,6 +154,7 @@ async function handleMessage(
                         blockHash: message.blockHash
                     } = message;
                     const entry: Partial<PBFTLogEntry> = {
+                        // ideal solution has unique ID of the sender, to verify legitimacy and single vote per node
                         blockHash: message.blockHash,
                         prepares: ["prepared"],
                     }
@@ -162,7 +163,7 @@ async function handleMessage(
                     const updatedPBFT = useStore.getState().PBFT;
 
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    console.log(quorum)
+                    console.log("quorum: ", quorum)
                     console.log("log: ", updatedPBFT.log[message.sequence].prepares);
                     console.log("length: ", updatedPBFT.log[message.sequence].prepares.length);
                     if (updatedPBFT.log[message.sequence].prepares.length >= quorum) {
@@ -188,19 +189,19 @@ async function handleMessage(
 
                     const entry: Partial<PBFTLogEntry> = {
                         blockHash: message.blockHash,
-                        commits: ["commited"],
+                        commits: ["committed"],
                     }
                     // ensures that two thirds majority has sent prepare
                     useStore.getState().appendToLog(message.sequence, entry);
                     const updatedPBFT = useStore.getState().PBFT;
                     
-                    updatedPBFT.log[message.sequence].commits.push("commited");
+                    /*updatedPBFT.log[message.sequence].commits.push("committed");*/
                     const quorum = Math.floor((2 * connectedPeers.length) / 3);
                     console.log("log: ", updatedPBFT.log[message.sequence].commits);
                     console.log("length: ", updatedPBFT.log[message.sequence].commits.length);
                     if (updatedPBFT.log[message.sequence].commits.length >= quorum) {
 
-                        console.log("2f commited");
+                        console.log("2f committed");
                         handleCommit(msg);
 
                     } else {

@@ -437,6 +437,10 @@ export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: Prepar
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
     const { PBFT } = useStore.getState();
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
+    if (PBFT.log[sequence]) {
+        console.log("old sequence");
+        return;
+    }
 
         const suggestedBlock = PBFT.log[sequence].suggestedBlock
         useStore.getState().addBlock(suggestedBlock);
