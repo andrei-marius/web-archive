@@ -435,7 +435,9 @@ export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: Prepar
 }
 
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
-    const { PBFT } = useStore.getState();
+    const PBFT  = useStore.getState().PBFT;
+    console.log("func handleComnmit, sequence: ", sequence);
+    console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
     if (PBFT.log[sequence]) {
         console.log("old sequence");
