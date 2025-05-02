@@ -13,12 +13,13 @@ import {
   isBlockchainMessage,
 } from "./safeguards";
 import { handleMetadata } from "./utils";
+let yesVotes = 0;
+let noVotes = 0;
 
 (() => {
   let peer: Peer;
   let connectedPeers: string[] = [];
-  let yesVotes = 0;
-  let noVotes = 0;
+ 
 
   const { socket, connections } = useStore.getState();
 
@@ -48,8 +49,6 @@ import { handleMetadata } from "./utils";
                   data,
                   connection,
                   connections,
-                  yesVotes,
-                  noVotes,
                   connectedPeers
                 );
               });
@@ -70,8 +69,6 @@ import { handleMetadata } from "./utils";
               data,
               conn,
               connections,
-              yesVotes,
-              noVotes,
               connectedPeers
             );
           });
@@ -105,8 +102,6 @@ async function handleIncomingData(
   data: unknown,
   connection: DataConnection,
   connections: DataConnection[],
-  yesVotes: number,
-  noVotes: number,
   connectedPeers: string[]
 ) {
   if (isBlockchainMessage(data)) {
