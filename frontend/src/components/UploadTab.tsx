@@ -7,7 +7,6 @@ import { Metadata } from "@/lib/types/types";
 import { getPreview } from "@/lib/api";
 import ExtensionCaptures from "./ExtensionCaptures";
 import { v4 as uuidv4 } from "uuid";
-import useStore from "../lib/store";
 
 const UploadTab: React.FC = () => {
   const [url, setUrl] = useState("");
@@ -15,10 +14,7 @@ const UploadTab: React.FC = () => {
   const [preview, setPreview] = useState<Metadata | null>(null);
   // const { generatePreview, loading, error } = getPreview();
   
-    useEffect(() => {
-        const chain = useStore.getState().blockchain;
-        useStore.getState().updateChain(chain.chain);
-        console.log("Blockchain initialized and state updated:", chain);
+  useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.source !== window) return;
   

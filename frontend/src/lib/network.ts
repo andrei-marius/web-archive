@@ -1,35 +1,36 @@
 import Peer, { DataConnection } from "peerjs";
 import { Block, Blockchain } from "./blockchain";
 import useStore from "./store";
-import { Metadata, Message } from "./types/types";
+import { Metadata, Message, PBFTLogEntry,} from "./types/types";
 // import pako from "pako";
 import _ from "lodash";
 import {
   // isMetadata,
   isMhtmlFile,
   isDownloadRequest,
-  isVote,
   isBlockchainSuggestion,
     isBlockchainMessage,
     isPrePrepareMessage,
     isPrepareMessage,
     isCommitMessage,
     isMetadata,
+    
 } from "./safeguards";
 import {
     handleMetadata,
-    sendVoteYes,
     blockRequested,
     handlePrePrepare,
     handlePrepare,
     handleCommit,
-    PBFTLogEntry,
 } from "./utils";
-let yesVotes = 0;
-let noVotes = 0;
 
 (() => {
-
+    const store = useStore.getState();
+    if (store.blockchain.chain.length === 0) {
+        const chain = new Blockchain();
+        store.updateChain(chain.chain);
+        console.log("Genesis block created and chain updated:", chain);
+    }
   let peer: Peer;
   let connectedPeers: string[] = [];
   
