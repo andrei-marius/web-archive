@@ -412,6 +412,7 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
 }
 
 export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
+    // TODO should only be called once
     console.log("func handlePrepare, blockHash received: ", blockHash);
     const PBFT = useStore.getState().PBFT;
     console.log("func handlePrepare, sequence: ", sequence);
@@ -435,11 +436,12 @@ export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: Prepar
 }
 
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
+    // TODO should only be called once
     const PBFT  = useStore.getState().PBFT;
     console.log("func handleComnmit, sequence: ", sequence);
     console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
-    if (PBFT.log[sequence]) {
+    if (PBFT.sequence !== sequence) { // TODO check if this worked
         console.log("old sequence");
         return;
     }

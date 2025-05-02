@@ -29,7 +29,8 @@ import {
     if (store.blockchain.chain.length === 0) {
         const chain = new Blockchain();
         store.updateChain(chain.chain);
-        console.log("Genesis block created and chain updated:", chain);
+        //console.log("Genesis block created and chain updated:", chain.chain);
+        //console.log("blockchain in state: ", useStore.getState().blockchain.chain)
     }
   let peer: Peer;
   let connectedPeers: string[] = [];
