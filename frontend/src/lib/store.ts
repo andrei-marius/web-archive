@@ -35,7 +35,7 @@ const useStore = create<AppState>((set) => ({
 
   addBlock: async (data) => {
     const { blockchain } = useStore.getState();
-    const newBlock = new Block(blockchain.chain.length, Date.now(), data);
+    const newBlock = new Block(blockchain.chain.length, /*Date.now(),*/ data);
     await blockchain.addBlock(newBlock);
 
     // Send the ENTIRE updated chain to the backend

@@ -33,7 +33,7 @@ export async function suggestBlock(data: Metadata) {
 
   const tempBlock = new Block(
     tempChain!.chain.length,
-    Date.now(),
+    /*Date.now(),*/
     suggestedBlock
   );
   await tempChain!.addBlock(tempBlock);
@@ -253,7 +253,7 @@ export async function requestBlock(data: Metadata) {
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        Date.now(),
+        /*Date.now(),*/
         suggestedBlock
     );
 
@@ -313,7 +313,7 @@ export async function blockRequested(data: Metadata) {
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        Date.now(),
+        /*Date.now(),*/
         data
     );
 
@@ -353,7 +353,7 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        Date.now(),
+        /*Date.now(),*/
         suggestedBlock
     );
 
