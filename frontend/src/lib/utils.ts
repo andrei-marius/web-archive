@@ -357,6 +357,7 @@ export async function handlePrePrepare({ suggestedBlock, blockHash, sequence, vi
         const log = {
             suggestedBlock: suggestedBlock,
             blockHash: blockHash,
+            prepares: ["prepared"],
             prePrepareMessage: {
                 type: 'PRE-PREPARE' as const,
                 suggestedBlock: suggestedBlock,
@@ -430,12 +431,18 @@ export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: 
             console.log("block.hash does not match blockHash");
         return;
         }
-        if (!PBFT.log[sequence].prePrepareMessage) {
-            console.log("no prePrepare from this sequence");
+
+        if (!PBFT.log[sequence].prePrepareMessage ||
+            PBFT.log[sequence].prePrepareMessage.blockHash !== newblockHash ||
+            PBFT.log[sequence].prePrepareMessage.suggestedBlock !== PBFT.log[sequence].suggestedBlock) {
+            // could make more tests
+            console.log("missing or incorrect prePrepare from this sequence");
         return;
         }
-    const log = {
-        block: chainBlock,
+
+        const log = {
+            prepares: ["committed"],
+            block: chainBlock,
         }
 
         useStore.getState().appendToLog(sequence, log);

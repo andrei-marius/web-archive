@@ -156,7 +156,7 @@ async function handleMessage(
                         view: message.view,
                         blockHash: message.blockHash
                     } = message;
-                    const entry: Partial<PBFTLogEntry> = {
+                    const entry = {
                         // ideal solution has unique ID of the sender, to verify legitimacy and single vote per node
                         blockHash: message.blockHash,
                         prepares: ["prepared"],
@@ -165,7 +165,9 @@ async function handleMessage(
                     useStore.getState().appendToLog(message.sequence, entry);
                     const updatedPBFT = useStore.getState().PBFT;
 
-                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    // const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    const f = Math.floor((connectedPeers.length) / 3);
+                    const quorum = 2 * f + 1;
                     console.log("quorum: ", quorum)
                     console.log("log: ", updatedPBFT.log[message.sequence].prepares);
                     console.log("length: ", updatedPBFT.log[message.sequence].prepares.length);
@@ -190,7 +192,7 @@ async function handleMessage(
                         blockHash: message.blockHash
                     } = message;
 
-                    const entry: Partial<PBFTLogEntry> = {
+                    const entry = {
                         blockHash: message.blockHash,
                         commits: ["committed"],
                     }
@@ -199,7 +201,9 @@ async function handleMessage(
                     const updatedPBFT = useStore.getState().PBFT;
                     
                     /*updatedPBFT.log[message.sequence].commits.push("committed");*/
-                    const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    // const quorum = Math.floor((2 * connectedPeers.length) / 3);
+                    const f = Math.floor((connectedPeers.length) / 3);
+                    const quorum = 2 * f + 1;
                     console.log("log: ", updatedPBFT.log[message.sequence].commits);
                     console.log("length: ", updatedPBFT.log[message.sequence].commits.length);
                     if (updatedPBFT.log[message.sequence].commits.length >= quorum) {
