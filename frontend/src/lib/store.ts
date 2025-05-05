@@ -83,9 +83,9 @@ const useStore = create<AppState>((set) => ({
                             ? [...(state.PBFT.log[sequence]?.commits || []), ...entry.commits]
                             : state.PBFT.log[sequence]?.commits || [],
 
-                        prePrepare: entry.prePrepare // Store PrePrepareMessage as a single object
-                            ? entry.prePrepare
-                            : state.PBFT.log[sequence]?.prePrepare // Use the existing one if available
+                        prePrepareMessage: entry.prePrepareMessage // Store PrePrepareMessage as a single object
+                            ? entry.prePrepareMessage
+                            : state.PBFT.log[sequence]?.prePrepareMessage // Use the existing one if available
                         ,
 
                         block: entry.block ?? state.PBFT.log[sequence]?.block,

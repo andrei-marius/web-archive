@@ -143,7 +143,7 @@ async function handleMessage(
                         sequence: message.sequence,
                         view: message.view
                     } = message;
-                    console.log("sending prepare");
+                    
                     handlePrePrepare(msg);
                 }
                 break;
@@ -208,7 +208,7 @@ async function handleMessage(
                         handleCommit(msg);
 
                     } else {
-                        console.log("received commit");
+                        console.log("not majority");
                     }
                     
                 }

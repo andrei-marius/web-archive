@@ -85,7 +85,7 @@ type PBFTLogEntry = {
     block: Block;
     prepares: string[]; 
     commits: string[];  
-    prePrepare: PrePrepareMessage;
+    prePrepareMessage: PrePrepareMessage;
 };
 
 type PBFTState = {

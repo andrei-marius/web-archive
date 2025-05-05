@@ -357,7 +357,13 @@ export async function handlePrePrepare({ suggestedBlock, blockHash, sequence, vi
         const log = {
             suggestedBlock: suggestedBlock,
             blockHash: blockHash,
-            prePrepareMessage: {suggestedBlock, blockHash, sequence, view } 
+            prePrepareMessage: {
+                type: 'PRE-PREPARE' as const,
+                suggestedBlock: suggestedBlock,
+                blockHash: blockHash,
+                sequence: sequence,
+                view: view
+            }
         }
 
         useStore.getState().appendToLog(sequence, log);
@@ -376,13 +382,18 @@ const handledPrepares = new Set<number>();
 function resetPrepare(sequence: number) {
     handledPrepares.delete(sequence);
 }
+
 export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
     // TODO should only be called once
+    console.log("sequence from prepare: ", sequence);
+
     const PBFT = useStore.getState().PBFT;
+    console.log("sequence from state: ", PBFT.sequence);
     if (PBFT.sequence !== sequence) { 
         console.log("wrong sequence");
         return;
     }
+
     if (handledPrepares.has(sequence)) {
         console.log("handlePrepare already called for sequence", sequence);
         return;
@@ -419,7 +430,7 @@ export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: 
             console.log("block.hash does not match blockHash");
         return;
         }
-        if (!PBFT.log[sequence].prePrepare) {
+        if (!PBFT.log[sequence].prePrepareMessage) {
             console.log("no prePrepare from this sequence");
         return;
         }
@@ -466,7 +477,7 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
         view: useStore.getState().PBFT.view + 1,
         sequence: useStore.getState().PBFT.sequence + 1,
     });
-
+    console.log("committed to local and updated sequence");
 }
 
 
