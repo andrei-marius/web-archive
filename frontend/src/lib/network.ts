@@ -167,7 +167,8 @@ async function handleMessage(
 
                     // const quorum = Math.floor((2 * connectedPeers.length) / 3);
                     const f = Math.floor((connectedPeers.length) / 3);
-                    const quorum = 2 * f + 1;
+                    // prepared state requires 2f prepare and one prePrepare therefore no f + 1 here
+                    const quorum = 2 * f;
                     console.log("quorum: ", quorum)
                     console.log("log: ", updatedPBFT.log[message.sequence].prepares);
                     console.log("length: ", updatedPBFT.log[message.sequence].prepares.length);
@@ -203,6 +204,7 @@ async function handleMessage(
                     /*updatedPBFT.log[message.sequence].commits.push("committed");*/
                     // const quorum = Math.floor((2 * connectedPeers.length) / 3);
                     const f = Math.floor((connectedPeers.length) / 3);
+                    // requires 2f +1 commit messages
                     const quorum = 2 * f + 1;
                     console.log("log: ", updatedPBFT.log[message.sequence].commits);
                     console.log("length: ", updatedPBFT.log[message.sequence].commits.length);

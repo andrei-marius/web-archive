@@ -472,8 +472,11 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
     console.log("func handleComnmit, sequence: ", sequence);
     console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
     if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
-    if (PBFT.sequence !== sequence) { // TODO check if this worked
-        console.log("old sequence");
+    if (PBFT.sequence !== sequence || !PBFT.log[sequence].prePrepareMessage ||
+        PBFT.log[sequence].prePrepareMessage.blockHash !== blockHash ||
+        PBFT.log[sequence].prePrepareMessage.suggestedBlock !== PBFT.log[sequence].suggestedBlock) {
+        // could make more tests
+        console.log("missing or incorrect prePrepare from this sequence");
         return;
     }
     resetPrepare(sequence);
