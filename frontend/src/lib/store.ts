@@ -73,7 +73,7 @@ const useStore = create<AppState>((set) => ({
                     ...state.PBFT.log,
                     [sequence]: {
                         ...state.PBFT.log[sequence],
-                        ...entry, // <- bring in new partial data
+                        ...entry, // merge old entry into the new partial data 
 
                         prepares: entry.prepares
                             ? [...(state.PBFT.log[sequence]?.prepares || []), ...entry.prepares]
@@ -82,6 +82,11 @@ const useStore = create<AppState>((set) => ({
                         commits: entry.commits
                             ? [...(state.PBFT.log[sequence]?.commits || []), ...entry.commits]
                             : state.PBFT.log[sequence]?.commits || [],
+
+                        prePrepare: entry.prePrepare // Store PrePrepareMessage as a single object
+                            ? entry.prePrepare
+                            : state.PBFT.log[sequence]?.prePrepare // Use the existing one if available
+                        ,
 
                         block: entry.block ?? state.PBFT.log[sequence]?.block,
                         blockHash: entry.blockHash ?? state.PBFT.log[sequence]?.blockHash,

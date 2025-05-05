@@ -58,6 +58,7 @@ type Message = {
 type PrePrepareMessage = {
     type: 'PRE-PREPARE';
     suggestedBlock: Metadata;
+    blockHash: string;
     view: number;
     sequence: number;
 };
@@ -82,8 +83,9 @@ type PBFTLogEntry = {
     suggestedBlock: Metadata;
     blockHash: string,
     block: Block;
-    prepares: string[]; // peerIds that sent PREPARE
-    commits: string[];  // peerIds that sent COMMIT
+    prepares: string[]; 
+    commits: string[];  
+    prePrepare: PrePrepareMessage;
 };
 
 type PBFTState = {

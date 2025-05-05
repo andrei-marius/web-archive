@@ -183,7 +183,7 @@ async function handleMessage(
             case "COMMIT":
                 await wait(300);
                 if (isCommitMessage(message)) {
-
+                    console.log("received commit");
                     const msg = {
                         sequence: message.sequence,
                         view: message.view,

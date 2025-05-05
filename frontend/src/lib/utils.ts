@@ -256,7 +256,7 @@ export async function requestBlock(data: Metadata) {
         /*Date.now(),*/
         suggestedBlock
     );
-
+    // consider removing the test here
     await tempChain!.addBlock(tempBlock);
     console.log("added new block tempChain", tempChain);
     if ((await tempChain.isChainValid()) == true) {
@@ -290,18 +290,13 @@ export async function blockRequested(data: Metadata) {
     // if (PBFTstate.role !== 'primary') return;
     //if (PBFTstate.log[sequence]) return;
     const { PBFT } = useStore.getState();
-    const msg = {
-        type: 'PRE-PREPARE',
-        suggestedBlock: data,
-        view: PBFT.view,
-        sequence: ++PBFT.sequence,
-    };
+    
     const state = {
         view: PBFT.view,
         sequence: ++PBFT.sequence
     }
     useStore.getState().updatePBFT(state);
-
+    const updatedPBFT = useStore.getState().PBFT;
     const originalChain = useStore.getState().blockchain;
     const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
 
@@ -324,23 +319,80 @@ export async function blockRequested(data: Metadata) {
     } else {
         console.error("Blockchain addition rejected due to hash missmatch");
     }
+    const chainBlock = tempChain.getLatestBlock();
+    const blockHash = chainBlock.hash;
     //the papers log format (pre-prepare,v(view number),n(sequence number),d(message digest/hash))?p(Primary signed),m (request message)
+    const msg = {
+        type: 'PRE-PREPARE',
+        suggestedBlock: data,
+        blockHash: blockHash,
+        view: updatedPBFT.view,
+        sequence: updatedPBFT.sequence, 
+    };
+
     const log = {
-        suggestedBlock: data
+        suggestedBlock: data,
+        blockHash: blockHash
     }
 
-    useStore.getState().appendToLog(PBFT.sequence, log);
+    useStore.getState().appendToLog(updatedPBFT.sequence, log);
     console.log("sending pre-prepare");
     sendToAll(msg);
     // perhaps some response to the intitial client who made the suggestion
 }
 
-export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePrepareMessage) {
-    const { PBFT } = useStore.getState();
+export async function handlePrePrepare({ suggestedBlock, blockHash, sequence, view }: PrePrepareMessage) {
+    const PBFT = useStore.getState().PBFT;
     if (PBFT.log[sequence]) {
         console.log("old sequence");
         return;
     }
+
+        const state = {
+            view: view,
+            sequence: sequence
+        }
+        useStore.getState().updatePBFT(state);
+        
+        const log = {
+            suggestedBlock: suggestedBlock,
+            blockHash: blockHash,
+            prePrepareMessage: {suggestedBlock, blockHash, sequence, view } 
+        }
+
+        useStore.getState().appendToLog(sequence, log);
+        
+        const prepareMsg = {
+            type: 'PREPARE',
+            sequence: sequence,
+            view: view,
+            blockHash: blockHash
+        };
+        console.log("sending prepare");
+        sendToAll(prepareMsg);
+}
+
+const handledPrepares = new Set<number>();
+function resetPrepare(sequence: number) {
+    handledPrepares.delete(sequence);
+}
+export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
+    // TODO should only be called once
+    const PBFT = useStore.getState().PBFT;
+    if (PBFT.sequence !== sequence) { 
+        console.log("wrong sequence");
+        return;
+    }
+    if (handledPrepares.has(sequence)) {
+        console.log("handlePrepare already called for sequence", sequence);
+        return;
+    }
+    handledPrepares.add(sequence);
+    console.log("func handlePrepare, blockHash received: ", blockHash);
+    
+    console.log("func handlePrepare, sequence: ", sequence);
+    
+    
 
     const originalChain = useStore.getState().blockchain;
     const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
@@ -351,76 +403,34 @@ export async function handlePrePrepare({ suggestedBlock, sequence, view }: PrePr
         JSON.parse(JSON.stringify(tempChain))
     );
 
+
     const tempBlock = new Block(
         tempChain!.chain.length,
         /*Date.now(),*/
-        suggestedBlock
+        PBFT.log[sequence].suggestedBlock
     );
 
     await tempChain!.addBlock(tempBlock);
-    console.log("added new block to tempChain", tempChain);
-    const chainBlock = tempChain.getLatestBlock();
-    const blockHash = chainBlock.hash;
-    console.log("blockHash", blockHash);
-    //const tempChain: Blockchain = _.cloneDeep(useStore.getState().blockchain);
-
-    //const tempBlock = new Block(
-    //    tempChain!.chain.length,
-    //    Date.now(),
-    //    suggestedBlock
-    //);
-    //const blockHash = tempBlock.hash;
-    //console.log("blockHash: ", blockHash);
-    //await tempChain!.addBlock(tempBlock);
-    
     if ((await tempChain.isChainValid()) == true) {
+    const chainBlock = tempChain.getLatestBlock();
+    const newblockHash = chainBlock.hash;
 
-        const state = {
-            view: view,
-            sequence: sequence
+        if (!newblockHash || newblockHash !== blockHash) {
+            console.log("block.hash does not match blockHash");
+        return;
         }
-        useStore.getState().updatePBFT(state);
-        // log should include these in order for the predicate "prepared" to be true
-        //: the request m
-        //a pre - prepare for m in view v with sequence number n
-        //,and 2f prepares from different backups that match
-        //the pre - prepare.
-        const log = {
-            suggestedBlock: suggestedBlock,
-            block: chainBlock,
-            blockHash: blockHash
+        if (!PBFT.log[sequence].prePrepare) {
+            console.log("no prePrepare from this sequence");
+        return;
+        }
+    const log = {
+        block: chainBlock,
         }
 
         useStore.getState().appendToLog(sequence, log);
         const updatedPBFT = useStore.getState().PBFT;
         console.log("updated PBFT log: ", updatedPBFT.log[sequence].block)
-        const prepareMsg = {
-            type: 'PREPARE',
-            sequence: sequence,
-            view: view,
-            blockHash: blockHash
-        };
-        console.log("sending prepare");
-        sendToAll(prepareMsg);
-
-    } else {
-        console.error("Blockchain addition rejected due to hash missmatch");
-        // resend logic or something
-    }
-
-
-}
-
-export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
-    // TODO should only be called once
-    console.log("func handlePrepare, blockHash received: ", blockHash);
-    const PBFT = useStore.getState().PBFT;
-    console.log("func handlePrepare, sequence: ", sequence);
-    console.log("func handlePrepare, PBFT state log[sequence].block.hash: ", PBFT.log[sequence].block.hash);
-    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) {
-        console.log("block.hash does not match blockHash");
-        return;
-    }
+        console.log("func handlePrepare, PBFT state log[sequence].block.hash: ", updatedPBFT.log[sequence].block.hash);
     const commitMsg = {
         type: 'COMMIT',
         sequence: sequence,
@@ -430,7 +440,10 @@ export function handlePrepare({ sequence, blockHash, view /*senderId*/ }: Prepar
 
         console.log("2f prepared");
         sendToAll(commitMsg);
-    
+    } else {
+        console.error("Blockchain addition rejected due to hash missmatch in handlePrepare");
+        // resend logic or something
+    }
 
 
 }
@@ -445,7 +458,7 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
         console.log("old sequence");
         return;
     }
-
+    resetPrepare(sequence);
         const suggestedBlock = PBFT.log[sequence].suggestedBlock
         useStore.getState().addBlock(suggestedBlock);
 
@@ -454,7 +467,8 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
         sequence: useStore.getState().PBFT.sequence + 1,
     });
 
-    }
+}
+
 
     // send reply?
 

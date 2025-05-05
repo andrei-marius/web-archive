@@ -34,6 +34,7 @@ function isPrePrepareMessage(data: unknown): data is PrePrepareMessage {
         data !== null &&
         "type" in data &&
         "suggestedBlock" in data &&
+        "blockHash" in data &&
         "view" in data &&
         "sequence" in data
     );
