@@ -8,6 +8,7 @@ import {
   PrePrepareMessage,
   PrepareMessage,
   CommitMessage,
+  ViewChangeMessage,
 } from "./types/types";
 
 function isBlockchainMessage(data: unknown): data is BlockchainMessage {
@@ -58,6 +59,18 @@ function isCommitMessage(data: unknown): data is CommitMessage {
         "blockHash" in data &&
         "view" in data &&
         "sequence" in data
+    );
+}
+function isViewChangeMessage(data: unknown): data is ViewChangeMessage {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "blockHash" in data &&
+        "view" in data &&
+        "sequence" in data &&
+        "peerId" in data &&
+        ("latestBlockHash" in data ? (data.latestBlockHash === null || typeof data.latestBlockHash === "string") : true)
     );
 }
 
@@ -117,4 +130,5 @@ export {
   isPrePrepareMessage,
   isPrepareMessage,
   isCommitMessage,
+  isViewChangeMessage,
 };

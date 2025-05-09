@@ -234,14 +234,29 @@ async function saveToUserFolder(
 }
 
 export async function requestBlock(data: Metadata) {
-    const { connections } = useStore.getState();
+    const { connections, PBFT } = useStore.getState();
 
+    const state = {
+        view: PBFT.view,
+        sequence: ++PBFT.sequence
+    }
+    useStore.getState().updatePBFT(state);
+
+    const updatedPBFT = useStore.getState().PBFT;
+    setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PrePrepare");
     // find primary and send only to them
     const suggestedBlock = data;
     const msg = {
         type: "BLOCK-REQUEST",
         suggestedBlock: suggestedBlock
     }
+
+    const log = {
+        suggestedBlock: data,
+    }
+
+    useStore.getState().appendToLog(updatedPBFT.sequence, log);
+
     const originalChain = useStore.getState().blockchain;
     const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
 
@@ -260,16 +275,20 @@ export async function requestBlock(data: Metadata) {
     await tempChain!.addBlock(tempBlock);
     console.log("added new block tempChain", tempChain);
     if ((await tempChain.isChainValid()) == true) {
-        const randomPeer = connections[Math.floor(Math.random() * connections.length)];
-        console.log("chain has correct hash Sending data to random peer: ", randomPeer);
+        const primary = useStore.getState().PBFT.primaryId;
+        const primaryPeer = connections.find(conn => conn.peer === primary);
+
+        // const randomPeer = connections[Math.floor(Math.random() * connections.length)];
+        console.log("chain has correct hash Sending data to primary peer: ", primaryPeer);
         // use this to send: primaryId = peerList[view % peerList.length];
 
-        if (randomPeer.open) {
+        if (primaryPeer?.open) {
             console.log("About to send msg:", JSON.stringify(msg, null, 2));
-            randomPeer.send(msg);
+            primaryPeer.send(msg);
         } else {
-            console.log("try again, random peer closed");
+            console.log("try again, primary peer closed");
         }
+        setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PRE-PREPARE");
     } else {
         console.error("Blockchain addition rejected due to hash missmatch");
 
@@ -308,7 +327,6 @@ export async function blockRequested(data: Metadata) {
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        /*Date.now(),*/
         data
     );
 
@@ -338,11 +356,11 @@ export async function blockRequested(data: Metadata) {
     useStore.getState().appendToLog(updatedPBFT.sequence, log);
     console.log("sending pre-prepare");
     sendToAll(msg);
-    // perhaps some response to the intitial client who made the suggestion
 }
 
 export async function handlePrePrepare({ suggestedBlock, blockHash, sequence, view }: PrePrepareMessage) {
     const PBFT = useStore.getState().PBFT;
+    setViewTimeoutForSequence(sequence, "Waiting for PREPARE quorum");
     if (PBFT.log[sequence]) {
         console.log("old sequence");
         return;
@@ -384,10 +402,9 @@ function resetPrepare(sequence: number) {
     handledPrepares.delete(sequence);
 }
 
-export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: PrepareMessage) {
-    // TODO should only be called once
+export async function handlePrepare({ sequence, blockHash, view }: PrepareMessage) {
     console.log("sequence from prepare: ", sequence);
-
+    setViewTimeoutForSequence(sequence, "Waiting for COMMIT quorum");
     const PBFT = useStore.getState().PBFT;
     console.log("sequence from state: ", PBFT.sequence);
     if (PBFT.sequence !== sequence) { 
@@ -418,7 +435,6 @@ export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: 
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        /*Date.now(),*/
         PBFT.log[sequence].suggestedBlock
     );
 
@@ -435,7 +451,6 @@ export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: 
         if (!PBFT.log[sequence].prePrepareMessage ||
             PBFT.log[sequence].prePrepareMessage.blockHash !== newblockHash ||
             PBFT.log[sequence].prePrepareMessage.suggestedBlock !== PBFT.log[sequence].suggestedBlock) {
-            // could make more tests
             console.log("missing or incorrect prePrepare from this sequence");
         return;
         }
@@ -460,14 +475,13 @@ export async function handlePrepare({ sequence, blockHash, view /*senderId*/ }: 
         sendToAll(commitMsg);
     } else {
         console.error("Blockchain addition rejected due to hash missmatch in handlePrepare");
-        // resend logic or something
     }
 
 
 }
 
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
-    // TODO should only be called once
+    clearViewTimeoutForSequence(sequence);
     const PBFT  = useStore.getState().PBFT;
     console.log("func handleComnmit, sequence: ", sequence);
     console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
@@ -475,7 +489,6 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
     if (PBFT.sequence !== sequence || !PBFT.log[sequence].prePrepareMessage ||
         PBFT.log[sequence].prePrepareMessage.blockHash !== blockHash ||
         PBFT.log[sequence].prePrepareMessage.suggestedBlock !== PBFT.log[sequence].suggestedBlock) {
-        // could make more tests
         console.log("missing or incorrect prePrepare from this sequence");
         return;
     }
@@ -488,6 +501,86 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
         sequence: useStore.getState().PBFT.sequence + 1,
     });
     console.log("committed to local and updated sequence");
+}
+
+export function updateView(newView: number) {
+    const peers = [useStore.getState().peerId!, ...useStore.getState().connections.map(c => c.peer)].sort();
+    const newPrimary = peers[newView % peers.length];
+    useStore.getState().updatePBFT({ view: newView, primaryId: newPrimary });
+}
+
+
+function triggerViewChange(sequence: number) {
+    console.warn(`Triggering view change for sequence ${sequence}`);
+    const PBFT = useStore.getState().PBFT;
+    const localPeer = useStore.getState().peerId;
+
+    // Clear any existing timeout for that sequence
+    clearTimeout(PBFT.timeouts[sequence]);
+    delete PBFT.timeouts[sequence];
+   
+    
+    const logEntry = PBFT.log[sequence];
+    const viewChangeMessage = {
+        type: "VIEW-CHANGE" as const,
+        view: PBFT.view,
+        sequence,
+        peerId: localPeer,
+        latestBlockHash: logEntry?.blockHash ?? null,
+    };
+
+    sendToAll(viewChangeMessage);
+}
+
+export function calculatePrimary(view: number): string {
+    const connections = useStore.getState().connections;
+    const peerId = useStore.getState().peerId;
+    const peers = [peerId, ...connections.map(conn => conn.peer)].sort(); // sorting to ensure deterministic order
+    return peers[view % peers.length];
+}
+
+function setViewTimeoutForSequence(sequence: number, reason: string, delayMs = 30000) {
+    const { PBFT, updatePBFT } = useStore.getState();
+
+    // Clear existing timeout for this sequence if present
+    const existing = PBFT.timeouts[sequence];
+    if (existing) clearTimeout(existing);
+
+    const timeout = setTimeout(() => {
+        console.warn(`[Timeout] ${reason}: triggering view change for sequence ${sequence}`);
+        triggerViewChange(sequence);
+
+        // Clean up
+        const updatedTimeouts = { ...PBFT.timeouts };
+        delete updatedTimeouts[sequence];
+        updatePBFT({ timeouts: updatedTimeouts });
+    }, delayMs);
+
+    updatePBFT({
+        timeouts: {
+            ...PBFT.timeouts,
+            [sequence]: timeout,
+        },
+    });
+}
+
+export function calcQuorum(n:number): number {
+    const connections = useStore.getState().connections;
+
+    const f = Math.floor((connections.length + 1) / 3);
+    const quorum = 2 * f + n;
+    return quorum;
+}
+function clearViewTimeoutForSequence(sequence: number) {
+    const { PBFT, updatePBFT } = useStore.getState();
+    const existing = PBFT.timeouts[sequence];
+
+    if (existing) {
+        clearTimeout(existing);
+        const updatedTimeouts = { ...PBFT.timeouts };
+        delete updatedTimeouts[sequence];
+        updatePBFT({ timeouts: updatedTimeouts });
+    }
 }
 
 

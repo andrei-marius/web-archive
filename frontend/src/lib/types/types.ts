@@ -71,6 +71,14 @@ type PrepareMessage = {
     //senderId: string;
 };
 
+type ViewChangeMessage = {
+    type: "VIEW-CHANGE",
+    view: number;
+    sequence: number;
+    peerId: string,
+    latestBlockHash: string | null,
+};
+
 type CommitMessage = {
     type: 'COMMIT';
     blockHash: string;
@@ -86,6 +94,7 @@ type PBFTLogEntry = {
     prepares: string[]; 
     commits: string[];  
     prePrepareMessage: PrePrepareMessage;
+    viewChangeMessage: ViewChangeMessage[];
 };
 
 type PBFTState = {
@@ -93,6 +102,8 @@ type PBFTState = {
     sequence: number;
     view: number;
     log: Record<number, PBFTLogEntry>;
+    timeouts: Record<number, ReturnType<typeof setTimeout>>;
+    primaryId: string;
 };
 
 export type {
@@ -109,4 +120,5 @@ export type {
   CommitMessage,
   PBFTState,
   PBFTLogEntry,
+  ViewChangeMessage,
 };

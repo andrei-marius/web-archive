@@ -4,6 +4,7 @@ import { Metadata } from "./types/types";
 import { Socket } from "socket.io-client";
 import { DataConnection } from "peerjs";
 import io from "socket.io-client";
+import { calculatePrimary } from "./utils"
 import {
     PBFTState,
     PBFTLogEntry,
@@ -16,7 +17,9 @@ type AppState = {
   updateChain: (chain: Block[]) => void;
   // setFolderHandle: (handle: FileSystemDirectoryHandle | null) => void;
   socket: Socket | null;
-    connections: DataConnection[];
+  connections: DataConnection[];
+  peerId: string | "";
+  setPeerId: (id: string) => void;
 
     PBFT: PBFTState;
     updatePBFT: (newPartial: Partial<PBFTState>) => void;
@@ -32,7 +35,8 @@ const useStore = create<AppState>((set) => ({
   // folderHandle: null,
   socket: io('http://localhost:3000/'),
   connections: [],
-
+    peerId: "", // or "" if you prefer
+    setPeerId: (id) => set({ peerId: id }),
   addBlock: async (data) => {
     const { blockchain } = useStore.getState();
     const newBlock = new Block(blockchain.chain.length, /*Date.now(),*/ data);
@@ -58,6 +62,8 @@ const useStore = create<AppState>((set) => ({
         sequence: 0,
         view: 0,
         log: {},
+        timeouts: {},
+        primaryId: calculatePrimary(0),
     },
 
     updatePBFT: (newPartial) =>
@@ -85,8 +91,11 @@ const useStore = create<AppState>((set) => ({
 
                         prePrepareMessage: entry.prePrepareMessage // Store PrePrepareMessage as a single object
                             ? entry.prePrepareMessage
-                            : state.PBFT.log[sequence]?.prePrepareMessage // Use the existing one if available
-                        ,
+                            : state.PBFT.log[sequence]?.prePrepareMessage, // Use the existing one if available
+                        
+                        viewChangeMessage: entry.viewChangeMessage 
+                            ? [...(state.PBFT.log[sequence]?.viewChangeMessage || []), ...entry.viewChangeMessage]
+                            : state.PBFT.log[sequence]?.viewChangeMessage || [],
 
                         block: entry.block ?? state.PBFT.log[sequence]?.block,
                         blockHash: entry.blockHash ?? state.PBFT.log[sequence]?.blockHash,

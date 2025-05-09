@@ -14,6 +14,7 @@ import {
     isPrepareMessage,
     isCommitMessage,
     isMetadata,
+    isViewChangeMessage,
     
 } from "./safeguards";
 import {
@@ -22,6 +23,9 @@ import {
     handlePrePrepare,
     handlePrepare,
     handleCommit,
+    calcQuorum,
+    requestBlock,
+    updateView,
 } from "./utils";
 
 (() => {
@@ -46,7 +50,8 @@ import {
         peer = new Peer(socket.id);
         console.log("peer id:", peer.id);
   
-        peer.on("open", (peerId) => {
+          peer.on("open", (peerId) => {
+              useStore.getState().setPeerId(peerId);
           console.log("My peer ID is:", peerId);
   
           if (connectedPeers.length > 0) {
@@ -157,18 +162,14 @@ async function handleMessage(
                         blockHash: message.blockHash
                     } = message;
                     const entry = {
-                        // ideal solution has unique ID of the sender, to verify legitimacy and single vote per node
                         blockHash: message.blockHash,
                         prepares: ["prepared"],
                     }
                     // ensures that two thirds majority has sent prepare
                     useStore.getState().appendToLog(message.sequence, entry);
-                    const updatedPBFT = useStore.getState().PBFT;
+                    const updatedPBFT = useStore.getState().PBFT
 
-                    // const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    const f = Math.floor((connectedPeers.length) / 3);
-                    // prepared state requires 2f prepare and one prePrepare therefore no f + 1 here
-                    const quorum = 2 * f;
+                    const quorum = calcQuorum(0); // 2f
                     console.log("quorum: ", quorum)
                     console.log("log: ", updatedPBFT.log[message.sequence].prepares);
                     console.log("length: ", updatedPBFT.log[message.sequence].prepares.length);
@@ -197,15 +198,10 @@ async function handleMessage(
                         blockHash: message.blockHash,
                         commits: ["committed"],
                     }
-                    // ensures that two thirds majority has sent prepare
                     useStore.getState().appendToLog(message.sequence, entry);
                     const updatedPBFT = useStore.getState().PBFT;
-                    
-                    /*updatedPBFT.log[message.sequence].commits.push("committed");*/
-                    // const quorum = Math.floor((2 * connectedPeers.length) / 3);
-                    const f = Math.floor((connectedPeers.length) / 3);
-                    // requires 2f +1 commit messages
-                    const quorum = 2 * f + 1;
+
+                    const quorum = calcQuorum(1); // 2f + 1
                     console.log("log: ", updatedPBFT.log[message.sequence].commits);
                     console.log("length: ", updatedPBFT.log[message.sequence].commits.length);
                     if (updatedPBFT.log[message.sequence].commits.length >= quorum) {
@@ -217,6 +213,62 @@ async function handleMessage(
                         console.log("not majority");
                     }
                     
+                }
+                break;
+            case "VIEW-CHANGE":
+                await wait(2000);
+                if (isViewChangeMessage(message)) {
+                    const PBFT = useStore.getState().PBFT
+
+                    const viewChange = {
+                        view: message.view,
+                        sequence: message.sequence,
+                        peerId: message.peerId,
+                        latestBlockHash: message.latestBlockHash,
+                    } = message;
+                    viewChange.type = 'VIEW-CHANGE' as const;
+                    if (viewChange.latestBlockHash === null || (viewChange.latestBlockHash !== null && viewChange.latestBlockHash === PBFT.log[viewChange.sequence].block.hash)) {
+                        // If latestBlockHash is not null, check if it matches the block hash in PBFT log
+                        if (viewChange.sequence === PBFT.sequence) {
+
+                            const entry = {
+                                viewChangeMessage: [viewChange],
+                            }
+                            useStore.getState().appendToLog(viewChange.sequence, entry);
+
+                            const quorum = calcQuorum(1);
+                            const updatedPBFT = useStore.getState().PBFT
+                            console.log("log: ", updatedPBFT.log[viewChange.sequence].viewChangeMessage);
+                            console.log("length: ", updatedPBFT.log[viewChange.sequence].viewChangeMessage.length);
+                            if (updatedPBFT.log[viewChange.sequence].viewChangeMessage.length >= quorum) {
+
+                                console.log("2f + 1 view change requests");
+                                updateView(PBFT.view += 1);
+                                const newUpdatedPBFT = useStore.getState().PBFT
+                                const peerId = useStore.getState().peerId
+                                if (newUpdatedPBFT.primaryId == peerId) { // is primary
+                                    if (newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock) { // and has metadata
+                                        blockRequested(newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock);
+                                    }
+                                } if (newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock &&
+                                    !newUpdatedPBFT.log[newUpdatedPBFT.sequence].blockHash) {
+                                    // is initial requester, and as such is the only person with the metadata
+                                    requestBlock(newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock);
+                                }
+                            } else {
+
+                                console.log("not majority");
+                            }
+                        } else {
+                            // Handle the case when the sequence number doesn't match the client's sequence
+                            console.log(`Sequence mismatch: expected ${PBFT.sequence}, got ${viewChange.sequence}`);
+
+                        }
+                    }
+                    else {
+                        // Handle the case when the hashes don't match
+                        console.log(`hash mismatch: expected ${PBFT.log[viewChange.sequence].block.hash}, got ${viewChange.latestBlockHash}`);
+                    }
                 }
                 break;
             case "request":
