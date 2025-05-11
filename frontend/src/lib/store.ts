@@ -63,7 +63,7 @@ const useStore = create<AppState>((set) => ({
         view: 0,
         log: {},
         timeouts: {},
-        primaryId: calculatePrimary(0),
+        primaryId: "", // left blank intentionally, update on new request
     },
 
     updatePBFT: (newPartial) =>

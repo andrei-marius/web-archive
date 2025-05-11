@@ -243,8 +243,8 @@ export async function requestBlock(data: Metadata) {
     useStore.getState().updatePBFT(state);
 
     const updatedPBFT = useStore.getState().PBFT;
-    setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PrePrepare");
-    // find primary and send only to them
+
+
     const suggestedBlock = data;
     const msg = {
         type: "BLOCK-REQUEST",
@@ -268,31 +268,37 @@ export async function requestBlock(data: Metadata) {
 
     const tempBlock = new Block(
         tempChain!.chain.length,
-        /*Date.now(),*/
         suggestedBlock
     );
     // consider removing the test here
     await tempChain!.addBlock(tempBlock);
     console.log("added new block tempChain", tempChain);
     if ((await tempChain.isChainValid()) == true) {
-        const primary = useStore.getState().PBFT.primaryId;
+
+        const primary = calculatePrimary(updatedPBFT.view)
+        useStore.getState().updatePBFT({ primaryId: primary });
+        // const primary = useStore.getState().PBFT.primaryId;
         const primaryPeer = connections.find(conn => conn.peer === primary);
 
         // const randomPeer = connections[Math.floor(Math.random() * connections.length)];
         console.log("chain has correct hash Sending data to primary peer: ", primaryPeer);
         // use this to send: primaryId = peerList[view % peerList.length];
-
-        if (primaryPeer?.open) {
-            console.log("About to send msg:", JSON.stringify(msg, null, 2));
-            primaryPeer.send(msg);
-        } else {
+        const peerId = useStore.getState().peerId
+        if (peerId === primary) {
+            blockRequested(msg.suggestedBlock);
+        } else if (primaryPeer?.open) {
+                console.log("About to send msg:", JSON.stringify(msg, null, 2));
+                primaryPeer.send(msg);
+            } else {
             console.log("try again, primary peer closed");
-        }
-        setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PRE-PREPARE");
+            }
+          
+        
     } else {
         console.error("Blockchain addition rejected due to hash missmatch");
 
     }
+    setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PRE-PREPARE");
 }
 
 export function sendToAll(msg: Message) {
@@ -305,10 +311,14 @@ export function sendToAll(msg: Message) {
 }
 
 export async function blockRequested(data: Metadata) {
+    const { PBFT, peerId } = useStore.getState();
+    const primary = calculatePrimary(PBFT.view)
+    useStore.getState().updatePBFT({ primaryId: primary });
+    // const peerId = useStore.getState().peerId;
     // check that the receipiant is the primary
-    // if (PBFTstate.role !== 'primary') return;
+    if (PBFT.primaryId !== peerId) return;
     //if (PBFTstate.log[sequence]) return;
-    const { PBFT } = useStore.getState();
+    
     
     const state = {
         view: PBFT.view,
