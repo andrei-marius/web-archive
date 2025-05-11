@@ -66,7 +66,6 @@ function isViewChangeMessage(data: unknown): data is ViewChangeMessage {
         typeof data === "object" &&
         data !== null &&
         "type" in data &&
-        "blockHash" in data &&
         "view" in data &&
         "sequence" in data &&
         "peerId" in data &&

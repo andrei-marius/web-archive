@@ -234,13 +234,14 @@ async function saveToUserFolder(
 }
 
 export async function requestBlock(data: Metadata) {
-    const { connections, PBFT } = useStore.getState();
+    const { connections, /*PBFT*/ } = useStore.getState();
 
-    const state = {
-        view: PBFT.view,
-        sequence: ++PBFT.sequence
-    }
-    useStore.getState().updatePBFT(state);
+    // updated in blockRequested, and again in handlePrePrepare. So regardless if local peer is primary or not, the primary propogates the sequence increment
+    //const state = {
+    //    view: PBFT.view,
+    //    sequence: ++PBFT.sequence
+    //}
+    //useStore.getState().updatePBFT(state);
 
     const updatedPBFT = useStore.getState().PBFT;
 
@@ -281,7 +282,7 @@ export async function requestBlock(data: Metadata) {
         const primaryPeer = connections.find(conn => conn.peer === primary);
 
         // const randomPeer = connections[Math.floor(Math.random() * connections.length)];
-        console.log("chain has correct hash Sending data to primary peer: ", primaryPeer);
+        console.log("chain has correct hash Sending data to primary peer: ", primaryPeer?.peer);
         // use this to send: primaryId = peerList[view % peerList.length];
         const peerId = useStore.getState().peerId
         if (peerId === primary) {
@@ -298,7 +299,7 @@ export async function requestBlock(data: Metadata) {
         console.error("Blockchain addition rejected due to hash missmatch");
 
     }
-    setViewTimeoutForSequence(updatedPBFT.sequence, "Waiting for PRE-PREPARE");
+    setViewTimeoutForSequence(updatedPBFT.sequence + 1, "Waiting for PRE-PREPARE");
 }
 
 export function sendToAll(msg: Message) {
@@ -311,9 +312,12 @@ export function sendToAll(msg: Message) {
 }
 
 export async function blockRequested(data: Metadata) {
-    const { PBFT, peerId } = useStore.getState();
-    const primary = calculatePrimary(PBFT.view)
+    const { peerId } = useStore.getState();
+    const primary = calculatePrimary(useStore.getState().PBFT.view);
     useStore.getState().updatePBFT({ primaryId: primary });
+    console.log("calculated primary: ", primary);
+    console.log("local peerId: ", peerId);
+    const { PBFT } = useStore.getState();
     // const peerId = useStore.getState().peerId;
     // check that the receipiant is the primary
     if (PBFT.primaryId !== peerId) return;
@@ -360,7 +364,15 @@ export async function blockRequested(data: Metadata) {
 
     const log = {
         suggestedBlock: data,
-        blockHash: blockHash
+        blockHash: blockHash,
+        prepares: ["prepared"],
+        prePrepareMessage: {
+            type: 'PRE-PREPARE' as const,
+            suggestedBlock: data,
+            blockHash: blockHash,
+            view: updatedPBFT.view,
+            sequence: updatedPBFT.sequence 
+        }
     }
 
     useStore.getState().appendToLog(updatedPBFT.sequence, log);
@@ -528,15 +540,16 @@ function triggerViewChange(sequence: number) {
     // Clear any existing timeout for that sequence
     clearTimeout(PBFT.timeouts[sequence]);
     delete PBFT.timeouts[sequence];
-   
-    
-    const logEntry = PBFT.log[sequence];
+
+    const blockchain = useStore.getState().blockchain;
+    const latestBlock = blockchain.getLatestBlock();
+    //const logEntry = PBFT.log[sequence];
     const viewChangeMessage = {
         type: "VIEW-CHANGE" as const,
         view: PBFT.view,
         sequence,
         peerId: localPeer,
-        latestBlockHash: logEntry?.blockHash ?? null,
+        latestBlockHash: latestBlock.hash//logEntry?.blockHash ?? null,
     };
 
     sendToAll(viewChangeMessage);

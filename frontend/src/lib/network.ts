@@ -218,6 +218,7 @@ async function handleMessage(
             case "VIEW-CHANGE":
                 await wait(2000);
                 if (isViewChangeMessage(message)) {
+                    console.log("viewchange called");
                     const PBFT = useStore.getState().PBFT
 
                     const viewChange = {
@@ -229,8 +230,9 @@ async function handleMessage(
                     viewChange.type = 'VIEW-CHANGE' as const;
                     if (viewChange.latestBlockHash === null || (viewChange.latestBlockHash !== null && viewChange.latestBlockHash === PBFT.log[viewChange.sequence].block.hash)) {
                         // If latestBlockHash is not null, check if it matches the block hash in PBFT log
+                        console.log("viewchange request was legit");
                         if (viewChange.sequence === PBFT.sequence) {
-
+                            console.log("viewchange request was legit and sequence was up to date");
                             const entry = {
                                 viewChangeMessage: [viewChange],
                             }
