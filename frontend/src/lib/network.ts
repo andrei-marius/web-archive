@@ -220,7 +220,8 @@ async function handleMessage(
                 if (isViewChangeMessage(message)) {
                     console.log("viewchange called");
                     const PBFT = useStore.getState().PBFT
-
+                    const blockchain = useStore.getState().blockchain;
+                    const latestBlock = blockchain.getLatestBlock();
                     const viewChange = {
                         view: message.view,
                         sequence: message.sequence,
@@ -228,7 +229,7 @@ async function handleMessage(
                         latestBlockHash: message.latestBlockHash,
                     } = message;
                     viewChange.type = 'VIEW-CHANGE' as const;
-                    if (viewChange.latestBlockHash === null || (viewChange.latestBlockHash !== null && viewChange.latestBlockHash === PBFT.log[viewChange.sequence].block.hash)) {
+                    if (viewChange.latestBlockHash === null || (viewChange.latestBlockHash !== null && viewChange.latestBlockHash === latestBlock.hash)) {
                         // If latestBlockHash is not null, check if it matches the block hash in PBFT log
                         console.log("viewchange request was legit");
                         if (viewChange.sequence === PBFT.sequence) {
