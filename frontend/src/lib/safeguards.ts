@@ -8,8 +8,20 @@ import {
   PrePrepareMessage,
   PrepareMessage,
   CommitMessage,
-  ViewChangeMessage,
+    ViewChangeMessage,
+    JoinRequest,
 } from "./types/types";
+
+function isJoinRequest(data: unknown): data is JoinRequest {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "view" in data &&
+        "sequence" in data &&
+        "block" in data 
+    );
+}
 
 function isBlockchainMessage(data: unknown): data is BlockchainMessage {
   return (
@@ -130,4 +142,5 @@ export {
   isPrepareMessage,
   isCommitMessage,
   isViewChangeMessage,
+  isJoinRequest,
 };

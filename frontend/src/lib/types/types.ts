@@ -79,6 +79,13 @@ type ViewChangeMessage = {
     latestBlockHash: string | null,
 };
 
+type JoinRequest = {
+    type: "JOIN-REQUEST";
+    view: number;
+    sequence: number;
+    block: Block[]
+};
+
 type CommitMessage = {
     type: 'COMMIT';
     blockHash: string;
@@ -121,4 +128,5 @@ export type {
   PBFTState,
   PBFTLogEntry,
   ViewChangeMessage,
+  JoinRequest,
 };

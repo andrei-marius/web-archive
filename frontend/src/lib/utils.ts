@@ -234,7 +234,7 @@ async function saveToUserFolder(
 }
 
 export async function requestBlock(data: Metadata) {
-    const { connections, /*PBFT*/ } = useStore.getState();
+    const { connections, PBFT } = useStore.getState();
 
     // updated in blockRequested, and again in handlePrePrepare. So regardless if local peer is primary or not, the primary propogates the sequence increment
     //const state = {
@@ -243,8 +243,6 @@ export async function requestBlock(data: Metadata) {
     //}
     //useStore.getState().updatePBFT(state);
 
-    const updatedPBFT = useStore.getState().PBFT;
-
 
     const suggestedBlock = data;
     const msg = {
@@ -252,11 +250,6 @@ export async function requestBlock(data: Metadata) {
         suggestedBlock: suggestedBlock
     }
 
-    const log = {
-        suggestedBlock: data,
-    }
-
-    useStore.getState().appendToLog(updatedPBFT.sequence, log);
 
     const originalChain = useStore.getState().blockchain;
     const tempChain = new Blockchain(JSON.parse(JSON.stringify(originalChain.chain)));
@@ -276,7 +269,7 @@ export async function requestBlock(data: Metadata) {
     console.log("added new block tempChain", tempChain);
     if ((await tempChain.isChainValid()) == true) {
 
-        const primary = calculatePrimary(updatedPBFT.view)
+        const primary = calculatePrimary(PBFT.view)
         useStore.getState().updatePBFT({ primaryId: primary });
         // const primary = useStore.getState().PBFT.primaryId;
         const primaryPeer = connections.find(conn => conn.peer === primary);
@@ -288,6 +281,12 @@ export async function requestBlock(data: Metadata) {
         if (peerId === primary) {
             blockRequested(msg.suggestedBlock);
         } else if (primaryPeer?.open) {
+                // if faulty primary something like this would allow for smooth retry and view increment. but the log clashes with test in handlePrePrepare
+                //const log = {
+                //    suggestedBlock: data,
+                //}
+                //setViewTimeoutForSequence(PBFT.sequence + 1, "Waiting for PRE-PREPARE");
+                //useStore.getState().appendToLog(PBFT.sequence + 1, log);
                 console.log("About to send msg:", JSON.stringify(msg, null, 2));
                 primaryPeer.send(msg);
             } else {
@@ -299,7 +298,7 @@ export async function requestBlock(data: Metadata) {
         console.error("Blockchain addition rejected due to hash missmatch");
 
     }
-    setViewTimeoutForSequence(updatedPBFT.sequence + 1, "Waiting for PRE-PREPARE");
+    
 }
 
 export function sendToAll(msg: Message) {
@@ -420,8 +419,15 @@ export async function handlePrePrepare({ suggestedBlock, blockHash, sequence, vi
 }
 
 const handledPrepares = new Set<number>();
+
 function resetPrepare(sequence: number) {
     handledPrepares.delete(sequence);
+}
+
+const handledViewChange = new Set<number>();
+
+export function resetViewChange(sequence: number) {
+    handledViewChange.delete(sequence);
 }
 
 export async function handlePrepare({ sequence, blockHash, view }: PrepareMessage) {
@@ -517,12 +523,6 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
     resetPrepare(sequence);
         const suggestedBlock = PBFT.log[sequence].suggestedBlock
         useStore.getState().addBlock(suggestedBlock);
-
-    useStore.getState().updatePBFT({
-        view: useStore.getState().PBFT.view + 1,
-        sequence: useStore.getState().PBFT.sequence + 1,
-    });
-    console.log("committed to local and updated sequence");
 }
 
 export function updateView(newView: number) {
@@ -537,19 +537,25 @@ function triggerViewChange(sequence: number) {
     const PBFT = useStore.getState().PBFT;
     const localPeer = useStore.getState().peerId;
 
-    // Clear any existing timeout for that sequence
+    if (handledViewChange.has(sequence)) {
+        console.log("ViewChange already called for sequence: ", sequence, ", terminating the process");
+        return;
+    }
+
+    handledViewChange.add(sequence);
+
     clearTimeout(PBFT.timeouts[sequence]);
     delete PBFT.timeouts[sequence];
 
+    setViewTimeoutForSequence(sequence, "Waiting for VIEW-CHANGE quorum");
     const blockchain = useStore.getState().blockchain;
     const latestBlock = blockchain.getLatestBlock();
-    //const logEntry = PBFT.log[sequence];
     const viewChangeMessage = {
         type: "VIEW-CHANGE" as const,
         view: PBFT.view,
         sequence,
         peerId: localPeer,
-        latestBlockHash: latestBlock.hash//logEntry?.blockHash ?? null,
+        latestBlockHash: latestBlock.hash
     };
 
     sendToAll(viewChangeMessage);

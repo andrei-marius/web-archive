@@ -15,7 +15,7 @@ import {
     isCommitMessage,
     isMetadata,
     isViewChangeMessage,
-    
+    isJoinRequest,
 } from "./safeguards";
 import {
     handleMetadata,
@@ -26,6 +26,9 @@ import {
     calcQuorum,
     requestBlock,
     updateView,
+    resetViewChange,
+    sendToAll,
+    calculatePrimary,
 } from "./utils";
 
 (() => {
@@ -78,23 +81,52 @@ import {
             }
           } else {
             console.log("no other peers");
-          }
+              }
+
+              // intended to get all peers to send the latest block and the view and sequence, and then validate the received messages by seeing if 2f +1 match and can be considered trusted
+              //if (connectedPeers.length + 1 >= 4) {
+              //    const joinRequest = {
+              //        type: "JOIN-REQUEST" as const,
+              //        peerId: peerId,
+              //    };
+              //    sendToAll(joinRequest);
+              //}
   
           peer.on("connection", (conn) => {
-            console.log("received connection", conn);
-            connections.push(conn);
-  
-            conn.on("data", async function (data: unknown) {
-              console.log("Received data:", data);
-  
-              //handleIncomingData(
-                handleMessage(
-                data,
-                conn,
-                connections,
-                connectedPeers
-              );
-            });
+              console.log("received connection", conn);
+              const PBFT = useStore.getState().PBFT
+              //console.log("peerId: ", peerId);
+              //console.log("peerId in useStore: ", useStore.getState().peerId);
+              //console.log("primaryId", PBFT.primaryId);
+              conn.on("open", () => {
+                  if (peerId === PBFT.primaryId) {
+                      console.log("I am primary, trying to send joinRequest")
+                      const lastBlock = useStore.getState().blockchain.getLatestBlock
+                      const joinRequest = {
+                          type: "JOIN-REQUEST" as const,
+                          view: PBFT.view,
+                          sequence: PBFT.sequence,
+                          block: lastBlock as unknown as Block[]
+                      };
+
+                      conn.send(joinRequest);
+
+
+                  }
+                  connections.push(conn);
+
+                  conn.on("data", async function (data: unknown) {
+                      console.log("Received data:", data);
+
+                      //handleIncomingData(
+                      handleMessage(
+                          data,
+                          conn,
+                          connections,
+                          connectedPeers
+                      );
+                  });
+              });
           });
         });
       }
@@ -131,6 +163,24 @@ async function handleMessage(
         const message = data as Message;
 
         switch (message.type) {
+            case "JOIN-REQUEST":
+                if (isJoinRequest(message)) {
+                    console.log("got the join request");
+                    console.log("current blockchain: ", useStore.getState().blockchain.chain);
+
+                    const entry = {
+                        view: message.view,
+                        sequence: message.sequence,
+                }
+
+                    // ensures that two thirds majority has sent prepare
+                    useStore.getState().updatePBFT(entry);
+                    useStore.getState().updateChain(message.block);
+
+
+                    console.log("updated blockchain: ", useStore.getState().blockchain.chain);
+                }
+                break;
             case "BLOCK-REQUEST":
                 if (isBlockchainSuggestion(message)) {
 
@@ -140,7 +190,7 @@ async function handleMessage(
                 }
                 break;
             case "PRE-PREPARE":
-                await wait(2000);
+                await wait(6000);
                 if (isPrePrepareMessage(message)) {
 
                     const msg = {
@@ -153,7 +203,7 @@ async function handleMessage(
                 }
                 break;
             case "PREPARE":
-                await wait(2000);
+                await wait(6000);
                 if (isPrepareMessage(message)) {
                     console.log("received prepare");
                     const msg = {
@@ -185,7 +235,7 @@ async function handleMessage(
                 }
                 break;
             case "COMMIT":
-                await wait(300);
+                await wait(6000);
                 if (isCommitMessage(message)) {
                     console.log("received commit");
                     const msg = {
@@ -251,12 +301,16 @@ async function handleMessage(
                                 const peerId = useStore.getState().peerId
                                 if (newUpdatedPBFT.primaryId == peerId) { // is primary
                                     if (newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock) { // and has metadata
+                                        resetViewChange(newUpdatedPBFT.sequence);
                                         blockRequested(newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock);
+                                        
                                     }
                                 } if (newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock &&
                                     !newUpdatedPBFT.log[newUpdatedPBFT.sequence].blockHash) {
                                     // is initial requester, and as such is the only person with the metadata
+                                    resetViewChange(newUpdatedPBFT.sequence);
                                     requestBlock(newUpdatedPBFT.log[newUpdatedPBFT.sequence].suggestedBlock);
+                                    
                                 }
                             } else {
 

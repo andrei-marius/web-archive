@@ -4,7 +4,6 @@ import { Metadata } from "./types/types";
 import { Socket } from "socket.io-client";
 import { DataConnection } from "peerjs";
 import io from "socket.io-client";
-import { calculatePrimary } from "./utils"
 import {
     PBFTState,
     PBFTLogEntry,
