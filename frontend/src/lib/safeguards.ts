@@ -19,7 +19,8 @@ function isJoinRequest(data: unknown): data is JoinRequest {
         "type" in data &&
         "view" in data &&
         "sequence" in data &&
-        "block" in data 
+        "block" in data && 
+        "sender" in data
     );
 }
 

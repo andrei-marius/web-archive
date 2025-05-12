@@ -83,7 +83,8 @@ type JoinRequest = {
     type: "JOIN-REQUEST";
     view: number;
     sequence: number;
-    block: Block[]
+    block: Block[];
+    sender: string;
 };
 
 type CommitMessage = {

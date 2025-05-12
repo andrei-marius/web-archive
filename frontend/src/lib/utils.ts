@@ -373,7 +373,7 @@ export async function blockRequested(data: Metadata) {
             sequence: updatedPBFT.sequence 
         }
     }
-
+    /*resetCommits(updatedPBFT.sequence - 1);*/
     useStore.getState().appendToLog(updatedPBFT.sequence, log);
     console.log("sending pre-prepare");
     sendToAll(msg);
@@ -423,6 +423,12 @@ const handledPrepares = new Set<number>();
 function resetPrepare(sequence: number) {
     handledPrepares.delete(sequence);
 }
+
+const handledCommits = new Set<number>();
+
+//function resetCommits(sequence: number) {
+//    handledCommits.delete(sequence);
+//}
 
 const handledViewChange = new Set<number>();
 
@@ -509,6 +515,10 @@ export async function handlePrepare({ sequence, blockHash, view }: PrepareMessag
 }
 
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
+    if (handledCommits.has(sequence)) {
+        console.log("handlePrepare already called for sequence", sequence);
+        return;
+    }
     clearViewTimeoutForSequence(sequence);
     const PBFT  = useStore.getState().PBFT;
     console.log("func handleComnmit, sequence: ", sequence);
@@ -521,6 +531,7 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
         return;
     }
     resetPrepare(sequence);
+    handledCommits.add(sequence);
         const suggestedBlock = PBFT.log[sequence].suggestedBlock
         useStore.getState().addBlock(suggestedBlock);
 }

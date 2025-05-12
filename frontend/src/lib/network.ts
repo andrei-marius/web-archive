@@ -106,7 +106,8 @@ import {
                           type: "JOIN-REQUEST" as const,
                           view: PBFT.view,
                           sequence: PBFT.sequence,
-                          block: [lastBlock]
+                          block: [lastBlock],
+                          sender: peerId
                       };
                       conn.send(joinRequest);
 
@@ -164,6 +165,10 @@ async function handleMessage(
         switch (message.type) {
             case "JOIN-REQUEST":
                 if (isJoinRequest(message)) {
+                    if (message.sender === useStore.getState().peerId) {
+                        console.log("Ignoring own JOIN-REQUEST");
+                        return;
+                    }
                     console.log("got the join request");
                     console.log("current blockchain: ", useStore.getState().blockchain.chain);
                     console.log("Incoming block array: ", message.block);
