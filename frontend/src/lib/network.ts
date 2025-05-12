@@ -101,14 +101,13 @@ import {
               conn.on("open", () => {
                   if (peerId === PBFT.primaryId) {
                       console.log("I am primary, trying to send joinRequest")
-                      const lastBlock = useStore.getState().blockchain.getLatestBlock
+                      const lastBlock = useStore.getState().blockchain.getLatestBlock();
                       const joinRequest = {
                           type: "JOIN-REQUEST" as const,
                           view: PBFT.view,
                           sequence: PBFT.sequence,
-                          block: lastBlock as unknown as Block[]
+                          block: [lastBlock]
                       };
-
                       conn.send(joinRequest);
 
 
@@ -167,13 +166,11 @@ async function handleMessage(
                 if (isJoinRequest(message)) {
                     console.log("got the join request");
                     console.log("current blockchain: ", useStore.getState().blockchain.chain);
-
+                    console.log("Incoming block array: ", message.block);
                     const entry = {
                         view: message.view,
                         sequence: message.sequence,
                 }
-
-                    // ensures that two thirds majority has sent prepare
                     useStore.getState().updatePBFT(entry);
                     useStore.getState().updateChain(message.block);
 
@@ -190,7 +187,6 @@ async function handleMessage(
                 }
                 break;
             case "PRE-PREPARE":
-                await wait(6000);
                 if (isPrePrepareMessage(message)) {
 
                     const msg = {
@@ -200,6 +196,7 @@ async function handleMessage(
                     } = message;
                     
                     handlePrePrepare(msg);
+                    
                 }
                 break;
             case "PREPARE":
@@ -231,7 +228,6 @@ async function handleMessage(
                     } else { 
                         console.log("not majority");
                     }
-                    
                 }
                 break;
             case "COMMIT":
@@ -262,11 +258,10 @@ async function handleMessage(
                     } else {
                         console.log("not majority");
                     }
-                    
                 }
                 break;
             case "VIEW-CHANGE":
-                await wait(2000);
+                await wait(6000);
                 if (isViewChangeMessage(message)) {
                     console.log("viewchange called");
                     const PBFT = useStore.getState().PBFT

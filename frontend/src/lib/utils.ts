@@ -484,7 +484,7 @@ export async function handlePrepare({ sequence, blockHash, view }: PrepareMessag
         }
 
         const log = {
-            prepares: ["committed"],
+            commits: ["committed"],
             block: chainBlock,
         }
 
