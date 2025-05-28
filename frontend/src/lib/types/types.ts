@@ -1,18 +1,18 @@
 import { Block } from "../blockchain";
 
 type Metadata = {
-  url: string;
-  title: string;
-  description: string;
-  keywords: string;
-  timestamp: string;
+  url: string | null;
+  title: string | null;
+  description: string | null;
+  keywords: string | null;
+  timestamp: number;
   screenshot: Buffer | Uint8Array | any;
   mhtml: string | Uint8Array | any;
   // screenshotPath: string;
   // mhtmlPath: string;
   id: string;
-  ogTitle: string;
-  ogDescription: string;
+  // ogTitle: string;
+  // ogDescription: string;
 };
 
 type BlockchainMessage = {

@@ -13,6 +13,7 @@ import { handleMetadata } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { saveFiles } from "@/lib/utils";
 import { requestBlock } from "@/lib/utils";
+import { formatTimestamp } from "@/lib/utils";
 
 type PreviewCardProps = {
   preview: Metadata;
@@ -71,25 +72,28 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
     }
   };
 
+  const display = (value: string | null | undefined) =>
+    value?.trim() ? value : "None";
+
   return (
     <Card className="w-full mt-10">
       <CardHeader className="w-full">
         <CardTitle className="text-2xl text-center">Preview</CardTitle>
         <CardDescription>
           <div style={{ wordBreak: "break-all" }}>
-            <b>URL:</b> {preview.url}
+            <b>URL:</b> {display(preview.url)}
           </div>
           <div style={{ wordBreak: "break-all" }}>
-            <b>Title:</b> {preview.title}
+            <b>Title:</b> {display(preview.title)}
           </div>
           <div>
-            <b>Description:</b> {preview.description}
+            <b>Description:</b> {display(preview.description)}
           </div>
           <div>
-            <b>Timestamp:</b> {preview.timestamp}
+            <b>Timestamp:</b> {formatTimestamp(preview.timestamp)}
           </div>
           <div>
-            <b>Keywords:</b> {preview.keywords}
+            <b>Keywords:</b> {display(preview.keywords)}
           </div>
           {/* <div>
             <b>MHTML:</b> {preview.mhtml}

@@ -3,6 +3,7 @@ import { Card, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Block } from "@/lib/blockchain";
 import { sendDownloadRequest } from "@/lib/utils";
+import { formatTimestamp } from "@/lib/utils";
 
 type BlockCardProps = {
   block: Block;
@@ -28,6 +29,9 @@ const BlockCard: React.FC<BlockCardProps> = ({
 
   const { data } = block;
 
+  const display = (value: string | null | undefined) =>
+    value?.trim() ? value : "None";
+
   return (
     <div className="w-full">
       <Card
@@ -39,21 +43,21 @@ const BlockCard: React.FC<BlockCardProps> = ({
         <CardHeader>
           <CardDescription>
             <div style={{ wordBreak: "break-all" }}>
-              <b>URL:</b> {data.url}
+              <b>URL:</b> {display(data.url)}
             </div>
             <div>
-              <b>Timestamp:</b> {data.timestamp}
+              <b>Timestamp:</b> {formatTimestamp(data.timestamp)}
             </div>
             {expanded && (
               <>
                 <div style={{ wordBreak: "break-all" }}>
-                  <b>Title:</b> {data.title}
+                  <b>Title:</b> {display(data.title)}
                 </div>
                 <div>
-                  <b>Description:</b> {data.description}
+                  <b>Description:</b> {display(data.description)}
                 </div>
                 <div>
-                  <b>Keywords:</b> {data.keywords}
+                  <b>Keywords:</b> {display(data.keywords)}
                 </div>
                 <div className="w-full mt-8 mb-10 overflow-hidden">
                   <img
