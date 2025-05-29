@@ -39,6 +39,7 @@ export function formatTimestamp(timestamp: number) {
   // Output example: "2025-05-28 07:28:22"
 }
 
+// using requestBlock instead now
 export async function suggestBlock(data: Metadata) {
   const { socket, connections } = useStore.getState();
 
@@ -462,11 +463,18 @@ export async function handlePrepare({ sequence, blockHash, view }: PrepareMessag
     setViewTimeoutForSequence(sequence, "Waiting for COMMIT quorum");
     const PBFT = useStore.getState().PBFT;
     console.log("sequence from state: ", PBFT.sequence);
-    if (PBFT.sequence !== sequence) { 
-        console.log("wrong sequence");
+    // previously checked against the sequence in state, rather than the sequence in the log => which if found provide a link to that specific message
+    //if (PBFT.sequence !== sequence) {
+    //    console.log("wrong sequence");
+    //    return;
+    //}
+
+    // checking correct view and existing pre-prepare log
+    if (blockHash !== PBFT.log[sequence].prePrepareMessage.blockHash || PBFT.log[sequence].prePrepareMessage.view !== PBFT.view) {
+        console.log("wrong message or view");
         return;
     }
-
+    // preventing double sending for the same prepare phase
     if (handledPrepares.has(sequence)) {
         console.log("handlePrepare already called for sequence", sequence);
         return;
@@ -544,8 +552,8 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
     const PBFT  = useStore.getState().PBFT;
     console.log("func handleComnmit, sequence: ", sequence);
     console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
-    if (!PBFT.log[sequence].block.hash || PBFT.log[sequence].block.hash !== blockHash) return;
-    if (PBFT.sequence !== sequence || !PBFT.log[sequence].prePrepareMessage ||
+    if (!PBFT.log[sequence].block.hash ||
+        !PBFT.log[sequence].prePrepareMessage ||
         PBFT.log[sequence].prePrepareMessage.blockHash !== blockHash ||
         PBFT.log[sequence].prePrepareMessage.suggestedBlock !== PBFT.log[sequence].suggestedBlock) {
         console.log("missing or incorrect prePrepare from this sequence");

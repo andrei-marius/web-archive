@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Metadata } from "../lib/types/types";
+import { isMetadata } from "@/lib/safeguards";
 import { handleMetadata } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { saveFiles } from "@/lib/utils";
@@ -57,7 +58,11 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
         await saveFiles(preview);
         // handleMetadata(preview);
           // suggestBlock(preview)
-          requestBlock(preview)
+          if (isMetadata(preview)) {
+              requestBlock(preview);
+          } else {
+              console.log("Wrong format");
+          }
       } catch (error) {
         console.error("Error during save and upload:", error);
       } finally {
