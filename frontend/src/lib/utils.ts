@@ -545,7 +545,7 @@ export async function handlePrepare({ sequence, blockHash, view }: PrepareMessag
 
 export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: CommitMessage) {
     if (handledCommits.has(sequence)) {
-        console.log("handlePrepare already called for sequence", sequence);
+        console.log("already committed this sequence", sequence);
         return;
     }
     clearViewTimeoutForSequence(sequence);

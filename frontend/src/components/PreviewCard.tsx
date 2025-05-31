@@ -58,11 +58,11 @@ const PreviewCard: React.FC<PreviewCardProps> = ({
         await saveFiles(preview);
         // handleMetadata(preview);
           // suggestBlock(preview)
-          if (isMetadata(preview)) {
+          //if (isMetadata(preview)) {
               requestBlock(preview);
-          } else {
-              console.log("Wrong format");
-          }
+          //} else {
+          //    console.log("Wrong format");
+          //}
       } catch (error) {
         console.error("Error during save and upload:", error);
       } finally {
