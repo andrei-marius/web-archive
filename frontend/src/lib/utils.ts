@@ -257,6 +257,14 @@ async function saveToUserFolder(
 
 export async function requestBlock(data: Metadata) {
     const { connections, PBFT } = useStore.getState();
+    const uint8Array = dataURLToUint8Array(data.screenshot);
+    const compressedMhtml = pako.deflate(data.mhtml);
+
+    const processedData: Metadata = {
+        ...data,
+        screenshot: uint8Array,
+        mhtml: compressedMhtml,
+    };
 
     // updated in blockRequested, and again in handlePrePrepare. So regardless if local peer is primary or not, the primary propogates the sequence increment
     //const state = {
@@ -266,10 +274,10 @@ export async function requestBlock(data: Metadata) {
     //useStore.getState().updatePBFT(state);
 
 
-    const suggestedBlock = data;
+    const suggestedBlock = processedData;
     const msg = {
         type: "BLOCK-REQUEST",
-        suggestedBlock: suggestedBlock
+        suggestedBlock: processedData
     }
 
 
