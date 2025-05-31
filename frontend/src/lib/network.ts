@@ -253,6 +253,7 @@ async function handleMessage(
                     const updatedPBFT = useStore.getState().PBFT;
 
                     const quorum = calcQuorum(1); // 2f + 1
+                    console.log("quorum: ", quorum)
                     console.log("log: ", updatedPBFT.log[message.sequence].commits);
                     console.log("length: ", updatedPBFT.log[message.sequence].commits.length);
                     if (updatedPBFT.log[message.sequence].commits.length >= quorum) {

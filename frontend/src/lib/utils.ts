@@ -533,7 +533,7 @@ export async function handlePrepare({ sequence, blockHash, view }: PrepareMessag
 
         useStore.getState().appendToLog(sequence, log);
         const updatedPBFT = useStore.getState().PBFT;
-        console.log("updated PBFT log: ", updatedPBFT.log[sequence].block)
+        console.log("updated PBFT log: ", updatedPBFT.log[sequence].block);
         console.log("func handlePrepare, PBFT state log[sequence].block.hash: ", updatedPBFT.log[sequence].block.hash);
     const commitMsg = {
         type: 'COMMIT',
@@ -558,8 +558,7 @@ export function handleCommit({ sequence, blockHash, /*view*/ /*senderId*/ }: Com
     }
     clearViewTimeoutForSequence(sequence);
     const PBFT  = useStore.getState().PBFT;
-    console.log("func handleComnmit, sequence: ", sequence);
-    console.log("func handleComnmit, PBFTsequence: ", PBFT.sequence);
+    
     if (!PBFT.log[sequence].block.hash ||
         !PBFT.log[sequence].prePrepareMessage ||
         PBFT.log[sequence].prePrepareMessage.blockHash !== blockHash ||

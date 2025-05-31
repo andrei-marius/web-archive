@@ -23,8 +23,8 @@ export class Block {
 
   async calculateHash(): Promise<void> {
     const data =
-      this.index +
-      //this.timestamp +
+      // this.index +
+      // this.timestamp +
       JSON.stringify(this.data) +
       this.previousHash;
     this.hash = await calculateHash(data);
